@@ -41,7 +41,7 @@ class CurrencyBalanceChip extends StatelessWidget {
               minHeight: compact ? 50 : AppSpacing.minimumTouchTarget,
             ),
             padding: EdgeInsets.symmetric(
-              horizontal: compact ? 6 : AppSpacing.sm,
+              horizontal: compact ? 4 : AppSpacing.sm,
               vertical: compact ? AppSpacing.xxs : AppSpacing.xs,
             ),
             decoration: const BoxDecoration(
@@ -52,13 +52,20 @@ class CurrencyBalanceChip extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                leading ??
-                    Icon(
-                      Icons.monetization_on_rounded,
-                      color: AppColors.yellow,
-                      size: compact ? 28 : 32,
-                    ),
-                SizedBox(width: compact ? AppSpacing.xxs : AppSpacing.xs),
+                SizedBox.square(
+                  dimension: compact ? 24 : 32,
+                  child: FittedBox(
+                    fit: BoxFit.contain,
+                    child:
+                        leading ??
+                        const Icon(
+                          Icons.monetization_on_rounded,
+                          color: AppColors.yellow,
+                          size: 32,
+                        ),
+                  ),
+                ),
+                SizedBox(width: compact ? 2 : AppSpacing.xs),
                 Flexible(
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
@@ -73,7 +80,7 @@ class CurrencyBalanceChip extends StatelessWidget {
                   ),
                 ),
                 if (onAdd != null) ...[
-                  SizedBox(width: compact ? AppSpacing.xxs : AppSpacing.xs),
+                  SizedBox(width: compact ? 2 : AppSpacing.xs),
                   _AddButton(onPressed: onAdd!, compact: compact),
                 ],
               ],
@@ -100,13 +107,18 @@ class _AddButton extends StatelessWidget {
         onTap: onPressed,
         radius: AppSpacing.lg,
         child: SizedBox.square(
-          dimension: compact ? 34 : AppSpacing.minimumTouchTarget,
-          child: const DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: AppGradients.primaryCta,
-              shape: BoxShape.circle,
+          dimension: AppSpacing.minimumTouchTarget,
+          child: Center(
+            child: SizedBox.square(
+              dimension: compact ? 34 : 40,
+              child: const DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: AppGradients.primaryCta,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.add_rounded, color: AppColors.surface),
+              ),
             ),
-            child: Icon(Icons.add_rounded, color: AppColors.surface),
           ),
         ),
       ),

@@ -78,12 +78,19 @@ class _PetActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final highlight = Color.lerp(color, AppColors.surface, 0.18)!;
+    final textScale = MediaQuery.textScalerOf(context).scale(1);
+    final buttonHeight = 106.0 + (textScale - 1).clamp(0.0, 1.0) * 90;
+    final iconSize = textScale >= 1.8
+        ? 44.0
+        : textScale >= 1.3
+        ? 48.0
+        : 56.0;
 
     return Semantics(
       button: true,
       label: label,
       child: Container(
-        height: 86,
+        height: buttonHeight,
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
@@ -116,25 +123,25 @@ class _PetActionButton extends StatelessWidget {
                 children: [
                   if (assetPath != null)
                     SizedBox(
-                      width: 56,
-                      height: 56,
+                      width: iconSize,
+                      height: iconSize,
                       child: Image.asset(assetPath!, fit: BoxFit.contain),
                     )
                   else
                     SizedBox.square(
-                      dimension: 56,
+                      dimension: iconSize,
                       child: FittedBox(
                         fit: BoxFit.scaleDown,
                         child: Icon(icon, color: AppColors.surface, size: 52),
                       ),
                     ),
                   const SizedBox(height: 2),
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      label,
-                      maxLines: 1,
-                      style: AppTextStyles.button.copyWith(fontSize: 16),
+                  Text(
+                    label,
+                    maxLines: 3,
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.label.copyWith(
+                      color: AppColors.surface,
                     ),
                   ),
                 ],

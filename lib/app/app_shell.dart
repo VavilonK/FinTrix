@@ -75,6 +75,8 @@ class _AppShellState extends State<AppShell> {
       ),
       1 => TasksScreen(
         onReturnHome: () => _selectTab(0),
+        onOpenTasks: () => _selectTab(1),
+        onOpenBudget: () => _selectTab(2),
         onOpenGoals: () => _selectTab(3),
       ),
       2 => BudgetScreen(onOpenGoals: () => _selectTab(3)),

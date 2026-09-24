@@ -71,9 +71,7 @@ class SavingsSummaryChip extends StatelessWidget {
                           label,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: AppTextStyles.caption.copyWith(
-                            fontSize: compact ? 10 : 13,
-                          ),
+                          style: AppTextStyles.caption,
                         ),
                         FittedBox(
                           fit: BoxFit.scaleDown,

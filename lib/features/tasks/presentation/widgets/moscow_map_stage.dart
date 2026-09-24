@@ -33,7 +33,6 @@ class MoscowMapStage extends StatefulWidget {
 class _MoscowMapStageState extends State<MoscowMapStage>
     with TickerProviderStateMixin {
   static const Size _sceneSize = Size(1080, 1280);
-  static const double _missionCardHeight = 178;
 
   final TransformationController _mapController = TransformationController();
   late final AnimationController _focusController;
@@ -103,12 +102,17 @@ class _MoscowMapStageState extends State<MoscowMapStage>
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
+        final missionCardHeight =
+            (260 + (MediaQuery.textScalerOf(context).scale(1) - 1) * 160).clamp(
+              260.0,
+              constraints.maxHeight * 0.62,
+            );
         final viewport = Size(constraints.maxWidth, constraints.maxHeight);
         final cameraPlan = MapCamera.plan(
           viewport: viewport,
           sceneSize: _sceneSize,
           normalizedLocation: _activeLocation.normalizedPosition,
-          bottomOverlayHeight: _missionCardHeight,
+          bottomOverlayHeight: missionCardHeight,
           topOverlayHeight: widget.topOverlayHeight,
         );
         if (_focusedLocationId != _activeLocation.id) {
@@ -121,7 +125,7 @@ class _MoscowMapStageState extends State<MoscowMapStage>
         }
         final visibleMapHeight = math.max(
           1.0,
-          constraints.maxHeight - _missionCardHeight,
+          constraints.maxHeight - missionCardHeight,
         );
         final minScale = math.max(
           constraints.maxWidth / _sceneSize.width,
@@ -142,9 +146,7 @@ class _MoscowMapStageState extends State<MoscowMapStage>
                   scaleEnabled: true,
                   minScale: minScale,
                   maxScale: 1.35,
-                  boundaryMargin: const EdgeInsets.only(
-                    bottom: _missionCardHeight,
-                  ),
+                  boundaryMargin: EdgeInsets.only(bottom: missionCardHeight),
                   clipBehavior: Clip.hardEdge,
                   onInteractionStart: (_) {
                     _userControlsCamera = true;
@@ -193,7 +195,7 @@ class _MoscowMapStageState extends State<MoscowMapStage>
                 right: 8,
                 bottom: 6,
                 child: SizedBox(
-                  height: _missionCardHeight - 6,
+                  height: missionCardHeight - 6,
                   child: MissionCard(
                     mission: widget.mission,
                     location: _activeLocation,

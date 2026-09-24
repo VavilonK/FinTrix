@@ -9,6 +9,7 @@ import '../../../core/theme/app_shadows.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/widgets/account_header.dart';
+import '../../../core/widgets/app_settings_button.dart';
 import '../../../core/widgets/amount_stepper.dart';
 import '../../../core/widgets/app_progress_bar.dart';
 import '../../../core/widgets/app_modal_sheet.dart';
@@ -16,6 +17,7 @@ import '../../../core/widgets/primary_gradient_button.dart';
 import '../../../core/widgets/rounded_surface_card.dart';
 import '../../../core/widgets/secondary_capsule_button.dart';
 import '../../finance/presentation/financial_history_screen.dart';
+import '../../home/presentation/widgets/home_sheets.dart';
 import '../domain/budget_plan.dart';
 
 class BudgetScreen extends StatelessWidget {
@@ -70,7 +72,9 @@ class BudgetScreen extends StatelessWidget {
                   height: 34,
                 ),
                 onSavingsTap: onOpenGoals,
-                trailing: const _SettingsButton(),
+                trailing: AppSettingsButton(
+                  onPressed: () => showSettingsSheet(context),
+                ),
                 useSafeArea: false,
               ),
               Expanded(
@@ -272,80 +276,90 @@ class _BudgetHeroBanner extends StatelessWidget {
     final hint = age <= 8
         ? 'Сначала отложим на важное,\nпотом выберем приятное!'
         : 'Распредели деньги так, чтобы хватило\nи на нужное, и на мечту.';
-    return RoundedSurfaceCard(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.sm,
-        AppSpacing.sm,
-        104,
-        AppSpacing.sm,
-      ),
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Row(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact =
+            constraints.maxWidth < 360 ||
+            MediaQuery.textScalerOf(context).scale(1) > 1.2;
+        final showBubble =
+            !compact && constraints.maxWidth >= 520;
+        return RoundedSurfaceCard(
+          padding: EdgeInsets.fromLTRB(
+            AppSpacing.sm,
+            AppSpacing.sm,
+            compact ? 85 : 104,
+            AppSpacing.sm,
+          ),
+          child: Stack(
+            clipBehavior: Clip.none,
             children: [
-              Container(
-                width: 66,
-                height: 66,
-                decoration: const BoxDecoration(
-                  gradient: AppGradients.primaryCta,
-                  borderRadius: AppRadii.mediumBorder,
-                ),
-                child: const Icon(
-                  Icons.account_balance_wallet_rounded,
-                  color: AppColors.surface,
-                  size: 42,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Мой бюджет', style: AppTextStyles.cardTitle),
-                    Text(
-                      'Распредели монеты с умом!',
-                      style: AppTextStyles.bodySecondary.copyWith(fontSize: 14),
+              Row(
+                children: [
+                  Container(
+                    width: 66,
+                    height: 66,
+                    decoration: const BoxDecoration(
+                      gradient: AppGradients.primaryCta,
+                      borderRadius: AppRadii.mediumBorder,
                     ),
-                  ],
+                    child: const Icon(
+                      Icons.account_balance_wallet_rounded,
+                      color: AppColors.surface,
+                      size: 42,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Мой бюджет', style: AppTextStyles.cardTitle),
+                        Text(
+                          'Распредели монеты с умом!',
+                          style: AppTextStyles.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              Positioned(
+                right: compact ? -82 : -98,
+                bottom: -13,
+                child: Image.asset(
+                  AppAssets.foxPeekingHappyLevel05,
+                  width: compact ? 82 : 108,
+                  height: compact ? 82 : 108,
+                  fit: BoxFit.contain,
                 ),
               ),
+              if (showBubble)
+                Positioned(
+                  right: -100,
+                  top: -5,
+                  child: Container(
+                    width: 130,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.xs,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceTranslucent,
+                      borderRadius: AppRadii.mediumBorder,
+                      border: Border.all(color: AppColors.borderLight),
+                    ),
+                    child: Text(
+                      hint,
+                      textAlign: TextAlign.center,
+                      maxLines: 3,
+                      style: AppTextStyles.caption,
+                    ),
+                  ),
+                ),
             ],
           ),
-          Positioned(
-            right: -98,
-            bottom: -13,
-            child: Image.asset(
-              AppAssets.foxPeekingHappyLevel05,
-              width: 108,
-              height: 108,
-              fit: BoxFit.contain,
-            ),
-          ),
-          Positioned(
-            right: -100,
-            top: -5,
-            child: Container(
-              width: 130,
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.xs,
-                vertical: 5,
-              ),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceTranslucent,
-                borderRadius: AppRadii.mediumBorder,
-                border: Border.all(color: AppColors.borderLight),
-              ),
-              child: Text(
-                hint,
-                textAlign: TextAlign.center,
-                maxLines: 3,
-                style: AppTextStyles.caption.copyWith(fontSize: 9.5),
-              ),
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
@@ -720,22 +734,6 @@ class _FoxBudgetHint extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _SettingsButton extends StatelessWidget {
-  const _SettingsButton();
-
-  @override
-  Widget build(BuildContext context) {
-    return const RoundedSurfaceCard(
-      padding: EdgeInsets.zero,
-      borderRadius: AppRadii.capsule,
-      child: SizedBox.square(
-        dimension: 50,
-        child: Icon(Icons.settings_rounded, color: AppColors.secondaryText),
       ),
     );
   }

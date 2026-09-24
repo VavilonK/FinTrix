@@ -67,6 +67,10 @@ void main() {
 
     await tester.scrollUntilVisible(find.text('Последние операции'), 350);
     expect(find.text('Награда adult'), findsOneWidget);
+    await tester.ensureVisible(
+      find.byKey(const ValueKey('adult_open_financial_history')),
+    );
+    await tester.pumpAndSettle();
     await tester.tap(
       find.byKey(const ValueKey('adult_open_financial_history')),
     );

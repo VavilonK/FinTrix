@@ -9,12 +9,14 @@ import '../../../core/theme/app_shadows.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/widgets/account_header.dart';
+import '../../../core/widgets/app_settings_button.dart';
 import '../../../core/widgets/app_modal_sheet.dart';
 import '../../../core/widgets/app_progress_bar.dart';
 import '../../../core/widgets/primary_gradient_button.dart';
 import '../../../core/widgets/rounded_surface_card.dart';
 import '../../../core/widgets/secondary_capsule_button.dart';
 import '../../budget/domain/budget_usage.dart';
+import '../../home/presentation/widgets/home_sheets.dart';
 import '../domain/savings_goal.dart';
 
 class GoalsScreen extends StatelessWidget {
@@ -65,7 +67,9 @@ class GoalsScreen extends StatelessWidget {
                   height: 34,
                 ),
                 showSavingsChevron: false,
-                trailing: const _SettingsButton(),
+                trailing: AppSettingsButton(
+                  onPressed: () => showSettingsSheet(context),
+                ),
                 useSafeArea: false,
               ),
               Expanded(
@@ -237,7 +241,7 @@ class GoalsScreen extends StatelessWidget {
                       amount == 0
                           ? 'Выбери сумму.'
                           : 'До цели станет дальше на ${_formatCoins(amount)} монет.',
-                      style: AppTextStyles.bodySecondary.copyWith(fontSize: 14),
+                      style: AppTextStyles.bodySmall,
                     ),
                   ],
                 ),
@@ -966,12 +970,7 @@ class _GoalStat extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.caption.copyWith(fontSize: 11),
-                ),
+                Text(label, maxLines: 2, style: AppTextStyles.caption),
                 Text(value, style: AppTextStyles.body),
               ],
             ),
@@ -995,45 +994,54 @@ class _NextGoalCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final enlargedText = MediaQuery.textScalerOf(context).scale(1) >= 1.3;
+    final details = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(goal.title, style: AppTextStyles.cardTitle),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset(AppAssets.financeCoinSingle, width: 22, height: 22),
+            const SizedBox(width: 4),
+            Flexible(
+              child: Text(_formatCoins(goal.price), style: AppTextStyles.body),
+            ),
+          ],
+        ),
+      ],
+    );
+    final chooseButton = SecondaryCapsuleButton(
+      key: ValueKey('choose_goal_${goal.id}'),
+      label: completed ? 'Достигнута ✓' : 'Выбрать',
+      onPressed: onChoose,
+      trailing: completed ? null : const Icon(Icons.chevron_right_rounded),
+    );
     return RoundedSurfaceCard(
       padding: const EdgeInsets.all(AppSpacing.sm),
-      child: Row(
-        children: [
-          _GoalArtwork(goal: goal, size: 88),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      child: enlargedText
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(goal.title, style: AppTextStyles.cardTitle),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Row(
-                    children: [
-                      Image.asset(
-                        AppAssets.financeCoinSingle,
-                        width: 22,
-                        height: 22,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(_formatCoins(goal.price), style: AppTextStyles.body),
-                    ],
-                  ),
+                Row(
+                  children: [
+                    _GoalArtwork(goal: goal, size: 88),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(child: details),
+                  ],
                 ),
+                const SizedBox(height: AppSpacing.xs),
+                chooseButton,
+              ],
+            )
+          : Row(
+              children: [
+                _GoalArtwork(goal: goal, size: 88),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(child: details),
+                chooseButton,
               ],
             ),
-          ),
-          SecondaryCapsuleButton(
-            key: ValueKey('choose_goal_${goal.id}'),
-            label: completed ? 'Достигнута ✓' : 'Выбрать',
-            onPressed: onChoose,
-            trailing: completed
-                ? null
-                : const Icon(Icons.chevron_right_rounded),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -1218,22 +1226,6 @@ class _GoalCompletionCelebration extends StatelessWidget {
         ),
         TextButton(onPressed: onClose, child: const Text('Готово')),
       ],
-    );
-  }
-}
-
-class _SettingsButton extends StatelessWidget {
-  const _SettingsButton();
-
-  @override
-  Widget build(BuildContext context) {
-    return const RoundedSurfaceCard(
-      padding: EdgeInsets.zero,
-      borderRadius: AppRadii.capsule,
-      child: SizedBox.square(
-        dimension: 50,
-        child: Icon(Icons.settings_rounded, color: AppColors.secondaryText),
-      ),
     );
   }
 }

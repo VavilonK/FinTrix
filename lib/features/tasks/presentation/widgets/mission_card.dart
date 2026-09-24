@@ -24,18 +24,20 @@ class MissionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textScale = MediaQuery.textScalerOf(context).scale(1);
     return RoundedSurfaceCard(
       padding: const EdgeInsets.all(AppSpacing.xs),
       borderRadius: AppRadii.heroCard,
-      child: Column(
-        children: [
-          Expanded(
-            child: Row(
+      child: SingleChildScrollView(
+        child: Column(
+          children: [
+            Row(
               children: [
                 ClipRRect(
                   borderRadius: AppRadii.mediumBorder,
                   child: Container(
-                    width: 78,
+                    width: textScale >= 1.5 ? 60 : 78,
+                    height: textScale >= 1.5 ? 70 : 88,
                     color: AppColors.primaryBlueLight,
                     child: location.sceneAsset.isNotEmpty
                         ? Image.asset(location.sceneAsset, fit: BoxFit.cover)
@@ -52,12 +54,7 @@ class MissionCard extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        location.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTextStyles.cardTitle.copyWith(fontSize: 17),
-                      ),
+                      Text(location.title, style: AppTextStyles.label),
                       const SizedBox(height: 3),
                       const _MissionFact(
                         icon: Icons.calendar_today_rounded,
@@ -73,62 +70,54 @@ class MissionCard extends StatelessWidget {
                     ],
                   ),
                 ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            PrimaryGradientButton(
+              label: 'Отправиться',
+              onPressed: onStartMission,
+              height: 48,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+              textStyle: AppTextStyles.buttonCompact,
+              trailing: const Icon(
+                Icons.chevron_right_rounded,
+                color: AppColors.surface,
+                size: 20,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Row(
+              children: [
+                Expanded(
+                  child: _MissionStep(
+                    icon: _themeIcon(mission.primaryTaskTheme),
+                    label: _themeLabel(mission.primaryTaskTheme),
+                    backgroundColor: const Color(0xFFFFE8F3),
+                    iconColor: AppColors.orange,
+                  ),
+                ),
                 const SizedBox(width: 6),
-                SizedBox(
-                  width: 112,
-                  child: PrimaryGradientButton(
-                    label: 'Отправиться',
-                    onPressed: onStartMission,
-                    height: 52,
-                    itemSpacing: 2,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 5),
-                    textStyle: AppTextStyles.body.copyWith(
-                      color: AppColors.surface,
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w900,
-                    ),
-                    trailing: const Icon(
-                      Icons.chevron_right_rounded,
-                      color: AppColors.surface,
-                      size: 18,
-                    ),
+                Expanded(
+                  child: _MissionStep(
+                    icon: _themeIcon(mission.secondaryTaskTheme),
+                    label: _themeLabel(mission.secondaryTaskTheme),
+                    backgroundColor: const Color(0xFFE2F6FF),
+                    iconColor: AppColors.primaryBlue,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: _MissionStep(
+                    icon: Icons.monetization_on_rounded,
+                    label: 'до +${mission.maxReward}',
+                    backgroundColor: Color(0xFFE9F8EF),
+                    iconColor: AppColors.purple,
                   ),
                 ),
               ],
             ),
-          ),
-          const SizedBox(height: 6),
-          Row(
-            children: [
-              Expanded(
-                child: _MissionStep(
-                  icon: _themeIcon(mission.primaryTaskTheme),
-                  label: _themeLabel(mission.primaryTaskTheme),
-                  backgroundColor: const Color(0xFFFFE8F3),
-                  iconColor: AppColors.orange,
-                ),
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: _MissionStep(
-                  icon: _themeIcon(mission.secondaryTaskTheme),
-                  label: _themeLabel(mission.secondaryTaskTheme),
-                  backgroundColor: const Color(0xFFE2F6FF),
-                  iconColor: AppColors.primaryBlue,
-                ),
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: _MissionStep(
-                  icon: Icons.monetization_on_rounded,
-                  label: 'до +${mission.maxReward}',
-                  backgroundColor: Color(0xFFE9F8EF),
-                  iconColor: AppColors.purple,
-                ),
-              ),
-            ],
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -189,13 +178,7 @@ class _MissionFact extends StatelessWidget {
           Flexible(
             child: Text(
               label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: AppTextStyles.caption.copyWith(
-                color: AppColors.navy,
-                fontSize: 11.5,
-                height: 1.05,
-              ),
+              style: AppTextStyles.bodySmall.copyWith(color: AppColors.navy),
             ),
           ),
         ],
@@ -225,13 +208,7 @@ class _RewardFact extends StatelessWidget {
           Flexible(
             child: Text(
               'Награда: до $maxReward монет',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: AppTextStyles.caption.copyWith(
-                color: AppColors.navy,
-                fontSize: 11.5,
-                height: 1.05,
-              ),
+              style: AppTextStyles.bodySmall.copyWith(color: AppColors.navy),
             ),
           ),
         ],
@@ -255,30 +232,23 @@ class _MissionStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textScale = MediaQuery.textScalerOf(context).scale(1);
     return Container(
-      height: 54,
+      constraints: BoxConstraints(minHeight: textScale >= 1.5 ? 118 : 72),
       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 4),
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: AppRadii.mediumBorder,
       ),
-      child: Row(
+      child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: iconColor, size: 25),
-          const SizedBox(width: 4),
-          Flexible(
-            child: Text(
-              label,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: AppColors.navy,
-                fontSize: 10.2,
-                height: 1.02,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
+          Icon(icon, color: iconColor, size: 23),
+          const SizedBox(height: 3),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: AppTextStyles.caption.copyWith(color: AppColors.navy),
           ),
         ],
       ),

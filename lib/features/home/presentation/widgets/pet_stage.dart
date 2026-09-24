@@ -33,12 +33,14 @@ class PetStage extends StatelessWidget {
       height: height,
       child: LayoutBuilder(
         builder: (context, constraints) {
+          final textScale = MediaQuery.textScalerOf(context).scale(1);
           final foxOverflow = (constraints.maxWidth * 0.06)
               .clamp(18.0, 28.0)
               .toDouble();
-          final meterWidth = (constraints.maxWidth * 0.27)
-              .clamp(92.0, 106.0)
-              .toDouble();
+          final meterWidth =
+              (constraints.maxWidth * (textScale >= 1.5 ? 0.6 : 0.43))
+                  .clamp(150.0, textScale >= 1.5 ? 225.0 : 175.0)
+                  .toDouble();
 
           return Stack(
             clipBehavior: Clip.none,
@@ -76,10 +78,7 @@ class PetStage extends StatelessWidget {
                   child: Text(
                     message,
                     textAlign: TextAlign.center,
-                    style: AppTextStyles.caption.copyWith(
-                      color: AppColors.secondaryText,
-                      fontSize: 11,
-                    ),
+                    style: AppTextStyles.caption,
                   ),
                 ),
               ),
@@ -171,8 +170,9 @@ class _PetStatusMeter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textScale = MediaQuery.textScalerOf(context).scale(1);
     return SizedBox(
-      height: 37,
+      height: textScale >= 1.5 ? 58 : 37 + (textScale - 1) * 28,
       child: DecoratedBox(
         decoration: const BoxDecoration(
           color: AppColors.surfaceTranslucent,
@@ -199,18 +199,7 @@ class _PetStatusMeter extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        label,
-                        maxLines: 1,
-                        style: AppTextStyles.caption.copyWith(
-                          color: AppColors.secondaryText,
-                          fontSize: 9.5,
-                        ),
-                      ),
-                    ),
+                    Text(label, maxLines: 1, style: AppTextStyles.caption),
                     const SizedBox(height: 2),
                     AppProgressBar(
                       value: value,

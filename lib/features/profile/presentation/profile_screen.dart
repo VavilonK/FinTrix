@@ -8,8 +8,10 @@ import '../../../core/theme/app_radii.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/widgets/account_header.dart';
+import '../../../core/widgets/app_settings_button.dart';
 import '../../../core/widgets/app_progress_bar.dart';
 import '../../../core/widgets/rounded_surface_card.dart';
+import '../../home/presentation/widgets/home_sheets.dart';
 import '../../pet_progression/domain/pet_progression.dart';
 import '../../pet_progression/presentation/pet_visual_resolver.dart';
 
@@ -61,7 +63,9 @@ class ProfileScreen extends StatelessWidget {
                   height: 34,
                 ),
                 onSavingsTap: onOpenGoals,
-                trailing: const _SettingsButton(),
+                trailing: AppSettingsButton(
+                  onPressed: () => showSettingsSheet(context),
+                ),
                 useSafeArea: false,
               ),
               Expanded(
@@ -322,6 +326,7 @@ class _GrowthCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final stage = appState.petGrowthStage;
+    final enlargedText = MediaQuery.textScalerOf(context).scale(1) >= 1.8;
     final threshold = PetProgressionConfig.nextStageThreshold(
       appState.petGrowthPoints,
     );
@@ -331,19 +336,36 @@ class _GrowthCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text('Как растёт Рыжик', style: AppTextStyles.cardTitle),
-              ),
-              Text(
-                stage.title,
-                style: AppTextStyles.caption.copyWith(
-                  color: AppColors.primaryBlue,
+          if (enlargedText)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Как растёт Рыжик', style: AppTextStyles.cardTitle),
+                Text(
+                  stage.title,
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.primaryBlue,
+                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            )
+          else
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Как растёт Рыжик',
+                    style: AppTextStyles.cardTitle,
+                  ),
+                ),
+                Text(
+                  stage.title,
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.primaryBlue,
+                  ),
+                ),
+              ],
+            ),
           const SizedBox(height: AppSpacing.sm),
           AppProgressBar(
             value: PetProgressionConfig.progressToNextStage(
@@ -431,9 +453,9 @@ class _StageStatus extends StatelessWidget {
     if (stage.index < current.index) {
       return const Icon(Icons.check_circle_rounded, color: AppColors.green);
     }
-    return const Row(
+    return const Column(
       mainAxisSize: MainAxisSize.min,
-      children: [Icon(Icons.lock_rounded, size: 15), Text(' Позже')],
+      children: [Icon(Icons.lock_rounded, size: 15), Text('Позже')],
     );
   }
 }
@@ -571,22 +593,6 @@ class _ProfileRow extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _SettingsButton extends StatelessWidget {
-  const _SettingsButton();
-
-  @override
-  Widget build(BuildContext context) {
-    return const RoundedSurfaceCard(
-      padding: EdgeInsets.zero,
-      borderRadius: AppRadii.capsule,
-      child: SizedBox.square(
-        dimension: 50,
-        child: Icon(Icons.settings_rounded, color: AppColors.secondaryText),
-      ),
     );
   }
 }

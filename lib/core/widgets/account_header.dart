@@ -43,7 +43,8 @@ class AccountHeader extends StatelessWidget {
             ? constraints.maxWidth
             : MediaQuery.sizeOf(context).width;
         final compact = width < 520;
-        final extremelyNarrow = width < 320;
+        final extremelyNarrow = width < 400;
+        final enlargedText = MediaQuery.textScalerOf(context).scale(1) >= 1.3;
         final horizontalPadding = compact
             ? AppSpacing.xs
             : AppSpacing.screenHorizontal(width);
@@ -73,7 +74,7 @@ class AccountHeader extends StatelessWidget {
           showChevron: showSavingsChevron,
         );
 
-        final headerContent = extremelyNarrow
+        final headerContent = extremelyNarrow || enlargedText
             ? Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

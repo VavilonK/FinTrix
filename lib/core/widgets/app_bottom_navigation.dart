@@ -46,6 +46,8 @@ class AppBottomNavigation extends StatelessWidget {
           builder: (context, constraints) {
             final itemWidth = constraints.maxWidth / items.length;
             final iconSize = (itemWidth * 0.32).clamp(22, 27).toDouble();
+            final enlargedText =
+                MediaQuery.textScalerOf(context).scale(1) >= 1.5;
 
             return Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -95,9 +97,12 @@ class AppBottomNavigation extends StatelessWidget {
                               ),
                               const SizedBox(height: AppSpacing.xxs),
                               Text(
-                                item.label,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                                enlargedText
+                                    ? _wrappedNavigationLabel(item.label)
+                                    : item.label,
+                                maxLines: enlargedText ? 2 : 1,
+                                textAlign: TextAlign.center,
+                                softWrap: true,
                                 style: AppTextStyles.navigationLabel.copyWith(
                                   color: color,
                                 ),
@@ -117,3 +122,11 @@ class AppBottomNavigation extends StatelessWidget {
     );
   }
 }
+
+String _wrappedNavigationLabel(String label) => switch (label) {
+  'Главная' => 'Глав-\nная',
+  'Задания' => 'Зада-\nния',
+  'Бюджет' => 'Бюд-\nжет',
+  'Профиль' => 'Про-\nфиль',
+  _ => label,
+};

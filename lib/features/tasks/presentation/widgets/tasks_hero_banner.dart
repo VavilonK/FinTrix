@@ -12,19 +12,22 @@ class TasksHeroBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 92,
-      child: RoundedSurfaceCard(
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.sm,
-          AppSpacing.xs,
-          0,
-          AppSpacing.xs,
-        ),
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Row(
+    final textScale = MediaQuery.textScalerOf(context).scale(1);
+    final showBubble =
+        MediaQuery.sizeOf(context).width >= 520 && textScale < 1.3;
+    return RoundedSurfaceCard(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.sm,
+        AppSpacing.xs,
+        0,
+        AppSpacing.xs,
+      ),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 76),
+            child: Row(
               children: [
                 Container(
                   width: 48,
@@ -42,24 +45,16 @@ class TasksHeroBanner extends StatelessWidget {
                 const SizedBox(width: AppSpacing.xs),
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.only(right: 150),
+                    padding: EdgeInsets.only(right: showBubble ? 150 : 86),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Задание дня',
-                          style: AppTextStyles.cardTitle.copyWith(fontSize: 19),
-                        ),
+                        Text('Задание дня', style: AppTextStyles.cardTitle),
                         const SizedBox(height: 2),
                         Text(
                           'Исследуй Москву и узнавай больше о деньгах!',
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTextStyles.caption.copyWith(
-                            fontSize: 10.5,
-                            height: 1.18,
-                          ),
+                          style: AppTextStyles.bodySmall,
                         ),
                       ],
                     ),
@@ -67,6 +62,8 @@ class TasksHeroBanner extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+          if (showBubble)
             Positioned(
               right: 54,
               top: -1,
@@ -81,28 +78,22 @@ class TasksHeroBanner extends StatelessWidget {
                 child: const Text(
                   'Маленькие шаги\nк большим мечтам!',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: AppColors.secondaryText,
-                    fontSize: 8.2,
-                    height: 1.15,
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: AppTextStyles.caption,
                 ),
               ),
             ),
-            Positioned(
-              right: -3,
-              bottom: -14,
-              child: Image.asset(
-                AppAssets.foxPeekingHappyLevel05,
-                width: 86,
-                height: 86,
-                fit: BoxFit.contain,
-                alignment: Alignment.bottomCenter,
-              ),
+          Positioned(
+            right: -3,
+            bottom: -14,
+            child: Image.asset(
+              AppAssets.foxPeekingHappyLevel05,
+              width: 86,
+              height: 86,
+              fit: BoxFit.contain,
+              alignment: Alignment.bottomCenter,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

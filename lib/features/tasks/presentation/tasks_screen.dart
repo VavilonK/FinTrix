@@ -4,11 +4,13 @@ import '../../../core/assets/app_assets.dart';
 import '../../../core/state/app_scope.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_text_styles.dart';
 import '../../../core/widgets/account_header.dart';
 import '../../missions/presentation/mission_complete_screen.dart';
 import '../../missions/presentation/mission_result_screen.dart';
 import '../../missions/presentation/mission_task_screen.dart';
 import '../../periods/data/demo_period_definitions.dart';
+import '../../home/presentation/widgets/home_sheets.dart';
 import 'mission_intro_screen.dart';
 import 'widgets/moscow_map_stage.dart';
 import 'widgets/tasks_hero_banner.dart';
@@ -16,11 +18,15 @@ import 'widgets/tasks_hero_banner.dart';
 class TasksScreen extends StatelessWidget {
   const TasksScreen({
     required this.onReturnHome,
+    required this.onOpenTasks,
+    required this.onOpenBudget,
     required this.onOpenGoals,
     super.key,
   });
 
   final VoidCallback onReturnHome;
+  final VoidCallback onOpenTasks;
+  final VoidCallback onOpenBudget;
   final VoidCallback onOpenGoals;
 
   @override
@@ -32,7 +38,10 @@ class TasksScreen extends StatelessWidget {
       builder: (context, constraints) {
         final topOverlayHeight =
             MediaQuery.paddingOf(context).top +
-            (appState.isDemoMode ? 202 : 172);
+            (appState.isDemoMode ? 202 : 172) +
+            (constraints.maxWidth < 400 ? 80 : 15) +
+            ((MediaQuery.textScalerOf(context).scale(1) - 1).clamp(0.0, 1.0) *
+                90);
         return Stack(
           fit: StackFit.expand,
           children: [
@@ -109,7 +118,12 @@ class TasksScreen extends StatelessWidget {
                           height: 34,
                           fit: BoxFit.contain,
                         ),
-                        onAddBalance: () {},
+                        onAddBalance: () => showQuickActionsSheet(
+                          context: context,
+                          onOpenTasks: onOpenTasks,
+                          onOpenBudget: onOpenBudget,
+                          onOpenGoals: onOpenGoals,
+                        ),
                         onSavingsTap: onOpenGoals,
                         trailing: _StreakChip(streak: appState.streak),
                         useSafeArea: false,
@@ -161,9 +175,11 @@ class _StreakChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final enlargedText = MediaQuery.textScalerOf(context).scale(1) >= 1.5;
     return Container(
-      width: 58,
-      height: 50,
+      width: enlargedText ? 72 : 58,
+      constraints: const BoxConstraints(minHeight: 50),
+      padding: const EdgeInsets.symmetric(vertical: 4),
       decoration: BoxDecoration(
         color: AppColors.surfaceTranslucent,
         borderRadius: BorderRadius.circular(25),
@@ -177,6 +193,7 @@ class _StreakChip extends StatelessWidget {
         ],
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const Icon(
@@ -186,12 +203,8 @@ class _StreakChip extends StatelessWidget {
           ),
           Text(
             '$streak дня',
-            style: const TextStyle(
-              color: AppColors.navy,
-              fontSize: 10.5,
-              height: 1,
-              fontWeight: FontWeight.w900,
-            ),
+            textAlign: TextAlign.center,
+            style: AppTextStyles.caption.copyWith(color: AppColors.navy),
           ),
         ],
       ),

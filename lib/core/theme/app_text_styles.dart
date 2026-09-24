@@ -19,6 +19,8 @@ abstract final class AppTextStyles {
     letterSpacing: -0.4,
   );
 
+  static const TextStyle screenTitle = heading;
+
   static const TextStyle sectionTitle = TextStyle(
     color: AppColors.navy,
     fontSize: 24,
@@ -48,6 +50,20 @@ abstract final class AppTextStyles {
     fontWeight: FontWeight.w500,
   );
 
+  static const TextStyle bodySmall = TextStyle(
+    color: AppColors.secondaryText,
+    fontSize: 14,
+    height: 1.35,
+    fontWeight: FontWeight.w600,
+  );
+
+  static const TextStyle label = TextStyle(
+    color: AppColors.navy,
+    fontSize: 14,
+    height: 1.25,
+    fontWeight: FontWeight.w800,
+  );
+
   static const TextStyle caption = TextStyle(
     color: AppColors.secondaryText,
     fontSize: 13,
@@ -62,6 +78,13 @@ abstract final class AppTextStyles {
     fontWeight: FontWeight.w800,
   );
 
+  static const TextStyle buttonCompact = TextStyle(
+    color: AppColors.surface,
+    fontSize: 16,
+    height: 1.2,
+    fontWeight: FontWeight.w800,
+  );
+
   static const TextStyle balance = TextStyle(
     color: AppColors.navy,
     fontSize: 24,
@@ -69,6 +92,8 @@ abstract final class AppTextStyles {
     fontWeight: FontWeight.w900,
     letterSpacing: -0.3,
   );
+
+  static const TextStyle numericLarge = balance;
 
   static const TextStyle navigationLabel = TextStyle(
     fontSize: 12,

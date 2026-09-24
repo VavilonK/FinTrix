@@ -220,14 +220,12 @@ class FinancialTransactionTile extends StatelessWidget {
                   if (showBalances && transaction.description != null)
                     Text(
                       transaction.description!,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.caption.copyWith(fontSize: 12),
+                      style: AppTextStyles.bodySmall,
                     ),
                   if (showBalances)
                     Text(
                       _balanceChange(transaction),
-                      style: AppTextStyles.caption.copyWith(fontSize: 12),
+                      style: AppTextStyles.bodySmall,
                     ),
                 ],
               ),

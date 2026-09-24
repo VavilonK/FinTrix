@@ -15,61 +15,50 @@ class HomeTaskCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textScale = MediaQuery.textScalerOf(context).scale(1);
     return RoundedSurfaceCard(
       onTap: onPressed,
       padding: const EdgeInsets.all(AppSpacing.xs),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          const _TaskPreview(),
-          const SizedBox(width: 6),
-          Expanded(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Сегодня новое задание!',
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.cardTitle.copyWith(
-                    fontSize: 15,
-                    height: 1.1,
-                  ),
+          Row(
+            children: [
+              const _TaskPreview(),
+              const SizedBox(width: AppSpacing.xs),
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Сегодня новое задание!', style: AppTextStyles.label),
+                    const SizedBox(height: AppSpacing.xxs),
+                    Text(
+                      'Узнай, как зарабатывать монеты!',
+                      style: AppTextStyles.bodySmall,
+                    ),
+                  ],
                 ),
-                const SizedBox(height: AppSpacing.xxs),
-                Text(
-                  'Узнай, как зарабатывать монеты и становиться финансово умнее!',
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.caption.copyWith(
-                    fontSize: 10.5,
-                    height: 1.2,
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-          const SizedBox(width: 6),
-          SizedBox(
-            width: 104,
-            child: PrimaryGradientButton(
-              label: 'Посмотреть',
-              height: 48,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 6,
-                vertical: AppSpacing.xs,
-              ),
-              itemSpacing: AppSpacing.xxs,
-              textStyle: AppTextStyles.body.copyWith(
-                color: AppColors.surface,
-                fontSize: 12.5,
-                fontWeight: FontWeight.w800,
-              ),
-              onPressed: onPressed,
-              trailing: const Icon(
-                Icons.chevron_right_rounded,
-                color: AppColors.surface,
-                size: 18,
+          const SizedBox(height: AppSpacing.xs),
+          Align(
+            alignment: Alignment.centerRight,
+            child: SizedBox(
+              width: textScale >= 1.5 ? double.infinity : 150,
+              child: PrimaryGradientButton(
+                label: 'Посмотреть',
+                height: 48,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                itemSpacing: AppSpacing.xxs,
+                textStyle: AppTextStyles.buttonCompact,
+                onPressed: onPressed,
+                trailing: const Icon(
+                  Icons.chevron_right_rounded,
+                  color: AppColors.surface,
+                  size: 18,
+                ),
               ),
             ),
           ),

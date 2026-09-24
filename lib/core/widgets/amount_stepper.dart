@@ -22,7 +22,7 @@ class AmountStepper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      constraints: const BoxConstraints(minHeight: 54),
+      constraints: const BoxConstraints(minHeight: 56),
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
         color: AppColors.surface,
@@ -84,26 +84,31 @@ class _StepperButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final enabled = onTap != null;
-    return SizedBox.square(
-      dimension: 44,
-      child: Material(
-        color: !enabled
-            ? AppColors.track
-            : isPrimary
-            ? AppColors.primaryBlue
-            : AppColors.backgroundLavender,
-        borderRadius: AppRadii.capsule,
-        child: InkWell(
-          onTap: onTap,
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      label: isPrimary ? 'Увеличить сумму' : 'Уменьшить сумму',
+      child: SizedBox.square(
+        dimension: 48,
+        child: Material(
+          color: !enabled
+              ? AppColors.track
+              : isPrimary
+              ? AppColors.primaryBlue
+              : AppColors.backgroundLavender,
           borderRadius: AppRadii.capsule,
-          child: Icon(
-            icon,
-            color: !enabled
-                ? AppColors.disabled
-                : isPrimary
-                ? AppColors.surface
-                : AppColors.primaryBlue,
-            size: 26,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: AppRadii.capsule,
+            child: Icon(
+              icon,
+              color: !enabled
+                  ? AppColors.disabled
+                  : isPrimary
+                  ? AppColors.surface
+                  : AppColors.primaryBlue,
+              size: 26,
+            ),
           ),
         ),
       ),
