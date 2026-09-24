@@ -19,12 +19,14 @@ class HomeScreen extends StatefulWidget {
     required this.onOpenTasks,
     required this.onOpenBudget,
     required this.onOpenGoals,
+    this.isActive = true,
     super.key,
   });
 
   final VoidCallback onOpenTasks;
   final VoidCallback onOpenBudget;
   final VoidCallback onOpenGoals;
+  final bool isActive;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -91,10 +93,10 @@ class _HomeScreenState extends State<HomeScreen> {
               final textScale = MediaQuery.textScalerOf(context).scale(1);
               final needsScroll =
                   constraints.maxWidth < 400 ||
-                  constraints.maxHeight < 780 ||
+                  constraints.maxHeight < 740 ||
                   textScale > 1.2;
               final stageHeight = (constraints.maxHeight - 390)
-                  .clamp(260.0, 320.0)
+                  .clamp(238.0, 320.0)
                   .toDouble();
 
               final header = AccountHeader(
@@ -159,8 +161,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     else
                       const Spacer(),
                     PetStage(
-                      key: ValueKey(_pettingSequence),
                       height: stageHeight,
+                      isActive: widget.isActive,
+                      animateIdle: !hungry && !_isPetting,
+                      pettingSequence: _pettingSequence,
                       mood: pet.mood,
                       satiety: pet.satiety,
                       care: pet.care,

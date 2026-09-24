@@ -1,11 +1,16 @@
 import 'package:finance_pet/app/app.dart';
 import 'package:finance_pet/core/state/app_controller.dart';
+import 'package:finance_pet/core/state/app_scope.dart';
 import 'package:finance_pet/core/widgets/app_bottom_navigation.dart';
 import 'package:finance_pet/core/widgets/app_settings_button.dart';
 import 'package:finance_pet/features/adult/domain/parent_access_service.dart';
 import 'package:finance_pet/features/budget/presentation/budget_screen.dart';
 import 'package:finance_pet/features/goals/presentation/goals_screen.dart';
 import 'package:finance_pet/features/home/presentation/home_screen.dart';
+import 'package:finance_pet/features/home/presentation/widgets/animated_pet.dart';
+import 'package:finance_pet/features/home/presentation/widgets/home_task_card.dart';
+import 'package:finance_pet/features/home/presentation/widgets/pet_actions.dart';
+import 'package:finance_pet/features/home/presentation/widgets/pet_stage.dart';
 import 'package:finance_pet/features/profile/presentation/profile_screen.dart';
 import 'package:finance_pet/features/tasks/presentation/tasks_screen.dart';
 import 'package:flutter/material.dart';
@@ -18,22 +23,72 @@ void main() {
     const Size(390, 844),
     const Size(412, 915),
   ]) {
-    testWidgets('main tabs fit ${size.width}×${size.height} at 1×', (
-      tester,
-    ) async {
-      await _prepare(tester, size: size, textScale: 1);
-      await _checkMainTabs(tester);
-    });
+    for (final textScale in [1.0, 1.3, 1.5, 2.0]) {
+      testWidgets('main tabs fit ${size.width}×${size.height} at $textScale×', (
+        tester,
+      ) async {
+        await _prepare(tester, size: size, textScale: textScale);
+        final scene = tester.getRect(find.byType(PetStage));
+        final actions = tester.getRect(find.byType(PetActions));
+        final card = tester.getRect(find.byType(HomeTaskCard));
+        final navigation = tester.getRect(find.byType(AppBottomNavigation));
+        expect(actions.top, greaterThanOrEqualTo(scene.bottom));
+        expect(card.top, greaterThan(actions.bottom));
+        if (size.width == 412 && textScale == 1) {
+          expect(card.bottom, closeTo(navigation.top - 8, 0.1));
+        }
+        tester.binding.platformDispatcher.accessibilityFeaturesTestValue =
+            const FakeAccessibilityFeatures(disableAnimations: true);
+        await tester.pump();
+        expect(tester.getRect(find.byType(PetStage)), scene);
+        expect(tester.getRect(find.byType(PetActions)), actions);
+        expect(tester.getRect(find.byType(HomeTaskCard)), card);
+        tester.binding.platformDispatcher.clearAccessibilityFeaturesTestValue();
+        await tester.pump();
+        await _checkMainTabs(tester);
+      });
+    }
   }
 
-  for (final textScale in [1.3, 1.5, 2.0]) {
-    testWidgets('main tabs remain usable at 360×800, $textScale× text', (
-      tester,
-    ) async {
-      await _prepare(tester, size: const Size(360, 800), textScale: textScale);
-      await _checkMainTabs(tester);
-    });
-  }
+  testWidgets(
+    'Home keeps the same image state across rebuilds and tab returns',
+    (tester) async {
+      await _prepare(tester, size: const Size(412, 915), textScale: 1);
+      final image = find.byKey(
+        const ValueKey('pet_idle_animation'),
+        skipOffstage: false,
+      );
+      final imageState = tester.state(image);
+      final controller = AppScope.of(tester.element(find.byType(HomeScreen)));
+      controller.notifyListeners();
+      await tester.pump();
+      expect(tester.state(image), same(imageState));
+      for (final label in ['Задания', 'Бюджет']) {
+        await tester.tap(find.widgetWithText(InkWell, label));
+        await tester.pumpAndSettle();
+        expect(
+          tester
+              .widget<AnimatedPet>(
+                find.byType(AnimatedPet, skipOffstage: false),
+              )
+              .isActive,
+          isFalse,
+        );
+        expect(TickerMode.valuesOf(tester.element(image)).enabled, isFalse);
+        await tester.tap(find.widgetWithText(InkWell, 'Главная'));
+        await tester.pumpAndSettle();
+        expect(tester.state(image), same(imageState));
+        expect(TickerMode.valuesOf(tester.element(image)).enabled, isTrue);
+      }
+      await tester.tap(find.byType(AppSettingsButton));
+      await tester.pumpAndSettle();
+      expect(TickerMode.valuesOf(tester.element(image)).enabled, isFalse);
+      Navigator.of(tester.element(find.text('Настройки'))).pop();
+      await tester.pumpAndSettle();
+      expect(tester.state(image), same(imageState));
+      expect(TickerMode.valuesOf(tester.element(image)).enabled, isTrue);
+    },
+  );
 
   testWidgets('header settings work on all tabs that show a gear', (
     tester,
@@ -82,6 +137,7 @@ Future<void> _prepare(
   await tester.binding.setSurfaceSize(size);
   tester.binding.platformDispatcher.textScaleFactorTestValue = textScale;
   addTearDown(() async {
+    tester.binding.platformDispatcher.clearAccessibilityFeaturesTestValue();
     tester.binding.platformDispatcher.clearTextScaleFactorTestValue();
     await tester.binding.setSurfaceSize(null);
   });
@@ -114,6 +170,26 @@ Future<void> _checkMainTabs(WidgetTester tester) async {
     await tester.tap(destinations.at(index + 1));
     await tester.pumpAndSettle();
     expect(find.byType(screen), findsOneWidget);
+    if (screen == TasksScreen) {
+      final thumbnail = tester.getRect(
+        find.byKey(const ValueKey('mission_thumbnail')),
+      );
+      final metadata = tester.getRect(
+        find.byKey(const ValueKey('mission_metadata')),
+      );
+      final action = tester.getRect(
+        find.byKey(const ValueKey('mission_start')),
+      );
+      final categories = tester.getRect(
+        find.byKey(const ValueKey('mission_categories')),
+      );
+      expect(thumbnail.right, lessThan(metadata.left));
+      expect(metadata.right, lessThan(action.left));
+      expect(action.center.dy, closeTo(metadata.center.dy, 0.1));
+      expect(action.height, greaterThanOrEqualTo(48));
+      expect(categories.top, greaterThanOrEqualTo(metadata.bottom));
+      expect(categories.top, greaterThanOrEqualTo(action.bottom));
+    }
     expect(tester.takeException(), isNull, reason: 'tab ${index + 1}: $screen');
   }
 }

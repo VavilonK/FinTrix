@@ -3,6 +3,9 @@
 /// Asset files are added separately as they are produced. This class must stay
 /// aligned with the asset directories declared in `pubspec.yaml`.
 abstract final class AppAssets {
+  static const String ryzhikIdleAnimation =
+      'assets/animations/fox/ryzhik_idle.webp';
+
   // Canonical Fox
   static const String foxSittingHappyLevel05 =
       'assets/images/characters/fox/fox_sitting_happy_level_05.png';

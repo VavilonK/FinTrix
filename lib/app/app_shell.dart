@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../core/assets/app_assets.dart';
 import '../core/state/app_scope.dart';
 import '../core/widgets/app_bottom_navigation.dart';
 import '../features/budget/presentation/budget_screen.dart';
@@ -46,12 +47,27 @@ class _AppShellState extends State<AppShell> {
 
   int _currentIndex = 0;
   late final List<Widget?> _screens;
+  bool _petPrecached = false;
 
   @override
   void initState() {
     super.initState();
     _screens = List<Widget?>.filled(_navigationItems.length, null);
     _screens[_currentIndex] = _createScreen(_currentIndex);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_petPrecached && !MediaQuery.disableAnimationsOf(context)) {
+      _petPrecached = true;
+      // Warm the first frame without delaying startup. AnimatedPet handles errors.
+      precacheImage(
+        const AssetImage(AppAssets.ryzhikIdleAnimation),
+        context,
+        onError: (error, stackTrace) {},
+      );
+    }
   }
 
   void _selectTab(int index) {
@@ -63,12 +79,15 @@ class _AppShellState extends State<AppShell> {
     setState(() {
       _screens[index] ??= _createScreen(index);
       _currentIndex = index;
+      // Same type and slot retain Home state; only its visibility changes.
+      _screens[0] = _createScreen(0);
     });
   }
 
   Widget _createScreen(int index) {
     return switch (index) {
       0 => HomeScreen(
+        isActive: _currentIndex == 0,
         onOpenTasks: () => _selectTab(1),
         onOpenBudget: () => _selectTab(2),
         onOpenGoals: () => _selectTab(3),

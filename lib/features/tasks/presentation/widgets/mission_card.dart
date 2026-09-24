@@ -36,7 +36,8 @@ class MissionCard extends StatelessWidget {
                 ClipRRect(
                   borderRadius: AppRadii.mediumBorder,
                   child: Container(
-                    width: textScale >= 1.5 ? 60 : 78,
+                    key: const ValueKey('mission_thumbnail'),
+                    width: MediaQuery.sizeOf(context).width < 400 ? 48 : 64,
                     height: textScale >= 1.5 ? 70 : 88,
                     color: AppColors.primaryBlueLight,
                     child: location.sceneAsset.isNotEmpty
@@ -51,6 +52,7 @@ class MissionCard extends StatelessWidget {
                 const SizedBox(width: AppSpacing.xs),
                 Expanded(
                   child: Column(
+                    key: const ValueKey('mission_metadata'),
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -70,23 +72,33 @@ class MissionCard extends StatelessWidget {
                     ],
                   ),
                 ),
+                const SizedBox(width: AppSpacing.xs),
+                SizedBox(
+                  width: textScale >= 1.5 ? 144 : 136,
+                  child: PrimaryGradientButton(
+                    key: const ValueKey('mission_start'),
+                    label: 'Отправиться',
+                    onPressed: onStartMission,
+                    height: 52,
+                    maxLines: 3,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 8,
+                    ),
+                    itemSpacing: 2,
+                    textStyle: AppTextStyles.buttonCompact,
+                    trailing: const Icon(
+                      Icons.chevron_right_rounded,
+                      color: AppColors.surface,
+                      size: 18,
+                    ),
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: AppSpacing.xs),
-            PrimaryGradientButton(
-              label: 'Отправиться',
-              onPressed: onStartMission,
-              height: 48,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-              textStyle: AppTextStyles.buttonCompact,
-              trailing: const Icon(
-                Icons.chevron_right_rounded,
-                color: AppColors.surface,
-                size: 20,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.xs),
             Row(
+              key: const ValueKey('mission_categories'),
               children: [
                 Expanded(
                   child: _MissionStep(

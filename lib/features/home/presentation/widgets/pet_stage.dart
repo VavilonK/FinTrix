@@ -6,6 +6,7 @@ import '../../../../core/theme/app_shadows.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_progress_bar.dart';
+import 'animated_pet.dart';
 
 class PetStage extends StatelessWidget {
   const PetStage({
@@ -16,6 +17,9 @@ class PetStage extends StatelessWidget {
     required this.foxAsset,
     required this.message,
     this.showHearts = false,
+    this.isActive = true,
+    this.animateIdle = true,
+    this.pettingSequence = 0,
     super.key,
   });
 
@@ -26,6 +30,9 @@ class PetStage extends StatelessWidget {
   final String foxAsset;
   final String message;
   final bool showHearts;
+  final bool isActive;
+  final bool animateIdle;
+  final int pettingSequence;
 
   @override
   Widget build(BuildContext context) {
@@ -50,17 +57,13 @@ class PetStage extends StatelessWidget {
                 right: -foxOverflow,
                 top: -32,
                 bottom: -4,
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 240),
-                  child: Image.asset(
-                    foxAsset,
-                    key: ValueKey(foxAsset),
-                    fit: BoxFit.contain,
-                    alignment: Alignment.bottomCenter,
-                  ),
+                child: AnimatedPet(
+                  fallbackAsset: foxAsset,
+                  isActive: isActive,
+                  animationsEnabled: animateIdle,
                 ),
               ),
-              if (showHearts) const _FloatingHearts(),
+              if (showHearts) _FloatingHearts(key: ValueKey(pettingSequence)),
               Positioned(
                 top: 0,
                 right: -4,
@@ -120,7 +123,7 @@ class PetStage extends StatelessWidget {
 }
 
 class _FloatingHearts extends StatelessWidget {
-  const _FloatingHearts();
+  const _FloatingHearts({super.key});
 
   @override
   Widget build(BuildContext context) {

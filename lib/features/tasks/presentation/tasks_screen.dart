@@ -36,12 +36,19 @@ class TasksScreen extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final topOverlayHeight =
-            MediaQuery.paddingOf(context).top +
-            (appState.isDemoMode ? 202 : 172) +
-            (constraints.maxWidth < 400 ? 80 : 15) +
-            ((MediaQuery.textScalerOf(context).scale(1) - 1).clamp(0.0, 1.0) *
-                90);
+        final compactHeader =
+            constraints.maxHeight < 600 &&
+            MediaQuery.textScalerOf(context).scale(1) >= 1.8;
+        final topOverlayHeight = compactHeader
+            ? constraints.maxHeight * 0.45
+            : MediaQuery.paddingOf(context).top +
+                  (appState.isDemoMode ? 202 : 172) +
+                  (constraints.maxWidth < 400 ? 80 : 15) +
+                  ((MediaQuery.textScalerOf(context).scale(1) - 1).clamp(
+                        0.0,
+                        1.0,
+                      ) *
+                      90);
         return Stack(
           fit: StackFit.expand,
           children: [
@@ -94,69 +101,76 @@ class TasksScreen extends StatelessWidget {
               child: Align(
                 alignment: Alignment.topCenter,
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 620),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      AccountHeader(
-                        avatar: Image.asset(
-                          AppAssets.avatarChildDefault,
-                          fit: BoxFit.cover,
-                        ),
-                        levelLabel: 'Ур. ${appState.petLevel}',
-                        balance: _formatCoins(appState.balance),
-                        savings: _formatCoins(appState.savings),
-                        balanceLeading: Image.asset(
-                          AppAssets.financeCoinSingle,
-                          width: 28,
-                          height: 28,
-                          fit: BoxFit.contain,
-                        ),
-                        savingsLeading: Image.asset(
-                          AppAssets.financePiggyBank,
-                          width: 34,
-                          height: 34,
-                          fit: BoxFit.contain,
-                        ),
-                        onAddBalance: () => showQuickActionsSheet(
-                          context: context,
-                          onOpenTasks: onOpenTasks,
-                          onOpenBudget: onOpenBudget,
-                          onOpenGoals: onOpenGoals,
-                        ),
-                        onSavingsTap: onOpenGoals,
-                        trailing: _StreakChip(streak: appState.streak),
-                        useSafeArea: false,
-                      ),
-                      if (appState.isDemoMode)
-                        Container(
-                          key: const ValueKey('tasks_demo_badge'),
-                          margin: const EdgeInsets.only(bottom: 4),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 4,
+                  constraints: BoxConstraints(
+                    maxWidth: 620,
+                    maxHeight: compactHeader
+                        ? topOverlayHeight - MediaQuery.paddingOf(context).top
+                        : double.infinity,
+                  ),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        AccountHeader(
+                          avatar: Image.asset(
+                            AppAssets.avatarChildDefault,
+                            fit: BoxFit.cover,
                           ),
-                          decoration: BoxDecoration(
-                            color: AppColors.purple,
-                            borderRadius: BorderRadius.circular(14),
+                          levelLabel: 'Ур. ${appState.petLevel}',
+                          balance: _formatCoins(appState.balance),
+                          savings: _formatCoins(appState.savings),
+                          balanceLeading: Image.asset(
+                            AppAssets.financeCoinSingle,
+                            width: 28,
+                            height: 28,
+                            fit: BoxFit.contain,
                           ),
-                          child: Text(
-                            'Демо • День ${appState.demoPeriodIndex} из '
-                            '${DemoPeriodDefinitions.count}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w800,
+                          savingsLeading: Image.asset(
+                            AppAssets.financePiggyBank,
+                            width: 34,
+                            height: 34,
+                            fit: BoxFit.contain,
+                          ),
+                          onAddBalance: () => showQuickActionsSheet(
+                            context: context,
+                            onOpenTasks: onOpenTasks,
+                            onOpenBudget: onOpenBudget,
+                            onOpenGoals: onOpenGoals,
+                          ),
+                          onSavingsTap: onOpenGoals,
+                          trailing: _StreakChip(streak: appState.streak),
+                          useSafeArea: false,
+                        ),
+                        if (appState.isDemoMode)
+                          Container(
+                            key: const ValueKey('tasks_demo_badge'),
+                            margin: const EdgeInsets.only(bottom: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.purple,
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: Text(
+                              'Демо • День ${appState.demoPeriodIndex} из '
+                              '${DemoPeriodDefinitions.count}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                              ),
                             ),
                           ),
+                        const Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: AppSpacing.sm,
+                          ),
+                          child: TasksHeroBanner(),
                         ),
-                      const Padding(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: AppSpacing.sm,
-                        ),
-                        child: TasksHeroBanner(),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
