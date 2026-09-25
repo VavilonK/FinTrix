@@ -102,11 +102,12 @@ class _MoscowMapStageState extends State<MoscowMapStage>
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
+        // Restore the original 178px footprint (172px card + 6px bottom gap).
+        final baseCardHeight = constraints.maxWidth < 400 ? 196.0 : 178.0;
         final missionCardHeight =
-            (260 + (MediaQuery.textScalerOf(context).scale(1) - 1) * 160).clamp(
-              260.0,
-              constraints.maxHeight * 0.62,
-            );
+            (baseCardHeight +
+                    (MediaQuery.textScalerOf(context).scale(1) - 1) * 160)
+                .clamp(baseCardHeight, constraints.maxHeight * 0.62);
         final viewport = Size(constraints.maxWidth, constraints.maxHeight);
         final cameraPlan = MapCamera.plan(
           viewport: viewport,

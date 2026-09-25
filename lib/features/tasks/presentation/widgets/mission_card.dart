@@ -5,7 +5,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radii.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/widgets/primary_gradient_button.dart';
+import '../../../../core/theme/app_shadows.dart';
 import '../../../../core/widgets/rounded_surface_card.dart';
 import '../../../missions/domain/mission_models.dart';
 import '../../domain/location_definition.dart';
@@ -30,84 +30,79 @@ class MissionCard extends StatelessWidget {
       borderRadius: AppRadii.heroCard,
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final thumbnailSize = (constraints.maxWidth * 0.21 / textScale).clamp(
-            textScale > 1.3 ? 48.0 : 68.0,
-            76.0,
-          );
-          final actionWidth = (constraints.maxWidth * 0.42).clamp(136.0, 144.0);
+          // Geometry from abdfc6e: 78px image, 112px CTA, 94px top row.
+          // Give readable metadata more room on narrower screens / larger text.
+          final thumbnailSize = constraints.maxWidth >= 370 && textScale <= 1.3
+              ? 78.0
+              : constraints.maxWidth >= 345 && textScale <= 1.3
+              ? 68.0
+              : 54.0;
+          final imageGap = constraints.maxWidth < 345 ? 4.0 : AppSpacing.xs;
           return SingleChildScrollView(
             child: Column(
               children: [
-                Row(
-                  children: [
-                    ClipRRect(
-                      borderRadius: AppRadii.mediumBorder,
-                      child: Container(
-                        key: const ValueKey('mission_thumbnail'),
-                        width: thumbnailSize,
-                        height: thumbnailSize,
-                        color: AppColors.primaryBlueLight,
-                        child: location.sceneAsset.isNotEmpty
-                            ? Image.asset(
-                                location.sceneAsset,
-                                fit: BoxFit.cover,
-                              )
-                            : Icon(
-                                _locationIcon(location.id),
-                                color: AppColors.primaryBlue,
-                                size: 42,
+                IntrinsicHeight(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(minHeight: 94),
+                    child: Row(
+                      key: const ValueKey('mission_main'),
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Align(
+                          alignment: Alignment.topCenter,
+                          child: ClipRRect(
+                            borderRadius: AppRadii.mediumBorder,
+                            child: Container(
+                              key: const ValueKey('mission_thumbnail'),
+                              width: thumbnailSize,
+                              height: thumbnailSize,
+                              color: AppColors.primaryBlueLight,
+                              child: location.sceneAsset.isNotEmpty
+                                  ? Image.asset(
+                                      location.sceneAsset,
+                                      fit: BoxFit.cover,
+                                    )
+                                  : Icon(
+                                      _locationIcon(location.id),
+                                      color: AppColors.primaryBlue,
+                                      size: 42,
+                                    ),
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: imageGap),
+                        Expanded(
+                          child: Column(
+                            key: const ValueKey('mission_metadata'),
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(location.title, style: AppTextStyles.label),
+                              const SizedBox(height: 3),
+                              const _MissionFact(
+                                icon: Icons.calendar_today_rounded,
+                                label: 'Сегодня',
                               ),
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.xs),
-                    Expanded(
-                      child: Column(
-                        key: const ValueKey('mission_metadata'),
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(location.title, style: AppTextStyles.label),
-                          const SizedBox(height: 3),
-                          const _MissionFact(
-                            icon: Icons.calendar_today_rounded,
-                            label: 'Сегодня',
+                              _MissionFact(
+                                icon: Icons.check_circle_rounded,
+                                label:
+                                    '${mission.tasks.length} заданий • ~${mission.estimatedMinutes}\u00a0мин',
+                                color: AppColors.green,
+                              ),
+                              _RewardFact(maxReward: mission.maxReward),
+                            ],
                           ),
-                          _MissionFact(
-                            icon: Icons.check_circle_rounded,
-                            label:
-                                '${mission.tasks.length} заданий • ~${mission.estimatedMinutes} мин',
-                            color: AppColors.green,
-                          ),
-                          _RewardFact(maxReward: mission.maxReward),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.xs),
-                    SizedBox(
-                      width: actionWidth,
-                      child: PrimaryGradientButton(
-                        key: const ValueKey('mission_start'),
-                        label: 'Отправиться',
-                        onPressed: onStartMission,
-                        height: 52,
-                        maxLines: null,
-                        textOverflow: TextOverflow.clip,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.xxs,
-                          vertical: 8,
                         ),
-                        itemSpacing: 2,
-                        textStyle: AppTextStyles.buttonCompact,
-                        trailing: const Icon(
-                          Icons.chevron_right_rounded,
-                          color: AppColors.surface,
-                          size: 18,
+                        const SizedBox(width: 6),
+                        SizedBox(
+                          width: 112,
+                          child: _MissionStartButton(onPressed: onStartMission),
                         ),
-                      ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
-                const SizedBox(height: AppSpacing.xs),
+                const SizedBox(height: 6),
                 IntrinsicHeight(
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -121,7 +116,7 @@ class MissionCard extends StatelessWidget {
                           iconColor: AppColors.orange,
                         ),
                       ),
-                      const SizedBox(width: AppSpacing.xs),
+                      const SizedBox(width: 6),
                       Expanded(
                         child: _MissionStep(
                           icon: _themeIcon(mission.secondaryTaskTheme),
@@ -130,7 +125,7 @@ class MissionCard extends StatelessWidget {
                           iconColor: AppColors.primaryBlue,
                         ),
                       ),
-                      const SizedBox(width: AppSpacing.xs),
+                      const SizedBox(width: 6),
                       Expanded(
                         child: _MissionStep(
                           icon: Icons.monetization_on_rounded,
@@ -206,7 +201,10 @@ class _MissionFact extends StatelessWidget {
           Flexible(
             child: Text(
               label,
-              style: AppTextStyles.bodySmall.copyWith(color: AppColors.navy),
+              style: AppTextStyles.bodySmall.copyWith(
+                color: AppColors.navy,
+                height: 1.15,
+              ),
             ),
           ),
         ],
@@ -236,7 +234,10 @@ class _RewardFact extends StatelessWidget {
           Flexible(
             child: Text(
               'Награда: до $maxReward монет',
-              style: AppTextStyles.bodySmall.copyWith(color: AppColors.navy),
+              style: AppTextStyles.bodySmall.copyWith(
+                color: AppColors.navy,
+                height: 1.15,
+              ),
             ),
           ),
         ],
@@ -260,25 +261,80 @@ class _MissionStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textScale = MediaQuery.textScalerOf(context).scale(1);
     return Container(
-      constraints: BoxConstraints(minHeight: textScale >= 1.5 ? 118 : 72),
+      constraints: const BoxConstraints(minHeight: 54),
       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 4),
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: AppRadii.mediumBorder,
       ),
-      child: Column(
+      child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: iconColor, size: 23),
-          const SizedBox(height: 3),
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            style: AppTextStyles.caption.copyWith(color: AppColors.navy),
+          Icon(icon, color: iconColor, size: 25),
+          const SizedBox(width: AppSpacing.xxs),
+          Flexible(
+            child: Text(
+              label,
+              style: AppTextStyles.caption.copyWith(color: AppColors.navy),
+            ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// The original tall right-hand control, with readable text instead of the old
+// 12.5px label. The arrow follows the label vertically to retain its 112px width.
+class _MissionStartButton extends StatelessWidget {
+  const _MissionStartButton({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      key: const ValueKey('mission_start'),
+      button: true,
+      child: DecoratedBox(
+        decoration: const BoxDecoration(
+          gradient: AppGradients.primaryCta,
+          borderRadius: AppRadii.card,
+          boxShadow: AppShadows.primaryControl,
+        ),
+        child: Material(
+          color: AppColors.transparent,
+          borderRadius: AppRadii.card,
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: onPressed,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 52),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 4),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Отправиться',
+                      textAlign: TextAlign.center,
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.surface,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const Icon(
+                      Icons.chevron_right_rounded,
+                      color: AppColors.surface,
+                      size: 18,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

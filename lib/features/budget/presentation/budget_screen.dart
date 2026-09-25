@@ -12,7 +12,6 @@ import '../../../core/widgets/account_header.dart';
 import '../../../core/widgets/app_settings_button.dart';
 import '../../../core/widgets/amount_stepper.dart';
 import '../../../core/widgets/app_progress_bar.dart';
-import '../../../core/widgets/app_modal_sheet.dart';
 import '../../../core/widgets/primary_gradient_button.dart';
 import '../../../core/widgets/rounded_surface_card.dart';
 import '../../finance/presentation/financial_history_screen.dart';
@@ -160,10 +159,6 @@ class BudgetScreen extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(height: AppSpacing.sm),
-                          if (appState.budgetPlanNeedsUpdate) ...[
-                            _BudgetDifferenceCard(appState: appState),
-                            const SizedBox(height: AppSpacing.sm),
-                          ],
                           _BudgetCategoryCard(
                             title: 'На важное',
                             subtitle: 'То, без чего не обойтись',
@@ -426,153 +421,21 @@ class _AllocationSummary extends StatelessWidget {
             foregroundColor: AppColors.green,
             semanticLabel: 'Распределение бюджета',
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _BudgetDifferenceCard extends StatelessWidget {
-  const _BudgetDifferenceCard({required this.appState});
-
-  final AppController appState;
-
-  @override
-  Widget build(BuildContext context) {
-    final difference = appState.budgetRemainingToAllocate;
-    final balanceChanged = difference < 0;
-    final usedToday =
-        appState.budgetUsage.totalSpent + appState.budgetUsage.savingsDeposited;
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.sm),
-      decoration: BoxDecoration(
-        color: balanceChanged
-            ? const Color(0xFFFFF3D8)
-            : AppColors.primaryBlueLight,
-        borderRadius: AppRadii.mediumBorder,
-        border: Border.all(
-          color: balanceChanged
-              ? const Color(0xFFFFD785)
-              : const Color(0xFFBADBFF),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Icon(
-                balanceChanged
-                    ? Icons.refresh_rounded
-                    : Icons.tips_and_updates_rounded,
-                color: balanceChanged
-                    ? AppColors.orange
-                    : AppColors.primaryBlue,
-              ),
-              const SizedBox(width: AppSpacing.xs),
-              Expanded(
-                child: Text(
-                  balanceChanged
-                      ? 'План сохранён. Сегодня уже использовано ${_formatCoins(usedToday)} монет.'
-                      : 'Появилось ещё ${_formatCoins(difference)} монет. Куда их распределим?',
-                  style: AppTextStyles.body.copyWith(fontSize: 14),
-                ),
-              ),
-            ],
-          ),
-          if (!balanceChanged) ...[
-            const SizedBox(height: AppSpacing.xxs),
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton(
-                key: const ValueKey('budget_reconcile'),
-                onPressed: () => _showAllocateExtraSheet(context, appState),
-                child: Text('Распределить ещё ${_formatCoins(difference)}'),
-              ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            appState.budgetRemainingToAllocate > 0
+                ? 'Осталось распределить ${_formatCoins(appState.budgetRemainingToAllocate)} монет'
+                : appState.budgetRemainingToAllocate == 0
+                ? 'Все монеты распределены ✓'
+                : 'План сохранён. Сегодня уже использовано '
+                      '${_formatCoins(appState.budgetUsage.totalSpent + appState.budgetUsage.savingsDeposited)} монет.',
+            style: AppTextStyles.bodySmall.copyWith(
+              color: appState.budgetRemainingToAllocate == 0
+                  ? AppColors.green
+                  : AppColors.secondaryText,
             ),
-          ],
+          ),
         ],
-      ),
-    );
-  }
-}
-
-Future<void> _showAllocateExtraSheet(
-  BuildContext context,
-  AppController appState,
-) {
-  final remainder = appState.budgetRemainingToAllocate;
-  return showAppModalSheet<void>(
-    context: context,
-    builder: (sheetContext) => Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text('Куда распределим?', style: AppTextStyles.heading),
-        const SizedBox(height: AppSpacing.xxs),
-        Text(
-          '${_formatCoins(remainder)} дополнительных монет',
-          style: AppTextStyles.bodySecondary,
-        ),
-        const SizedBox(height: AppSpacing.md),
-        _AllocationChoice(
-          key: const ValueKey('allocate_extra_essentials'),
-          icon: Icons.shopping_basket_rounded,
-          label: 'На важное',
-          onTap: () {
-            appState.allocateBudgetRemainder(BudgetCategory.essentials);
-            Navigator.of(sheetContext).pop();
-          },
-        ),
-        _AllocationChoice(
-          key: const ValueKey('allocate_extra_wants'),
-          icon: Icons.sports_esports_rounded,
-          label: 'На приятное',
-          onTap: () {
-            appState.allocateBudgetRemainder(BudgetCategory.wants);
-            Navigator.of(sheetContext).pop();
-          },
-        ),
-        _AllocationChoice(
-          key: const ValueKey('allocate_extra_savings'),
-          icon: Icons.savings_rounded,
-          label: 'На мечту',
-          onTap: () {
-            appState.allocateBudgetRemainder(BudgetCategory.savings);
-            Navigator.of(sheetContext).pop();
-          },
-        ),
-      ],
-    ),
-  );
-}
-
-class _AllocationChoice extends StatelessWidget {
-  const _AllocationChoice({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    super.key,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.transparent,
-      child: ListTile(
-        minTileHeight: 58,
-        onTap: onTap,
-        leading: CircleAvatar(
-          backgroundColor: AppColors.primaryBlueLight,
-          foregroundColor: AppColors.primaryBlue,
-          child: Icon(icon),
-        ),
-        title: Text(label, style: AppTextStyles.body),
-        trailing: const Icon(Icons.chevron_right_rounded),
       ),
     );
   }

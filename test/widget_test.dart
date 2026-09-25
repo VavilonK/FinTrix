@@ -735,21 +735,25 @@ void main() {
     await tester.pumpAndSettle();
     final context = tester.element(find.byType(HomeScreen));
     final state = AppScope.of(context)
-      ..balance += 120
+      ..balance += 200
       ..notifyListeners();
 
     await tester.tap(find.widgetWithText(InkWell, 'Бюджет'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('Появилось ещё 120 монет'), findsOneWidget);
-    await tester.tap(find.byKey(const ValueKey('budget_reconcile')));
-    await tester.pumpAndSettle();
-    expect(find.text('Куда распределим?'), findsOneWidget);
-    await tester.tap(find.byKey(const ValueKey('allocate_extra_essentials')));
-    await tester.pumpAndSettle();
-
-    expect(state.budgetPlan.essentialsPlanned, 620);
-    expect(state.totalBudgetAllocated, 1370);
-    expect(state.balance, 1370);
+    expect(find.text('Осталось распределить 200 монет'), findsOneWidget);
+    expect(find.textContaining('Появилось ещё'), findsNothing);
+    expect(find.textContaining('Распределить ещё'), findsNothing);
+    final plus = find.byKey(const ValueKey('budget_essentials_plus'));
+    await tester.ensureVisible(plus);
+    for (var index = 0; index < 4; index++) {
+      await tester.tap(plus);
+      await tester.pumpAndSettle();
+    }
+    expect(find.text('Все монеты распределены ✓'), findsOneWidget);
+    expect(find.textContaining('Осталось распределить'), findsNothing);
+    expect(state.budgetPlan.essentialsPlanned, 700);
+    expect(state.totalBudgetAllocated, 1450);
+    expect(state.balance, 1450);
     expect(tester.takeException(), isNull);
   });
 }
