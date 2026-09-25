@@ -15,7 +15,6 @@ import '../../../core/widgets/app_progress_bar.dart';
 import '../../../core/widgets/app_modal_sheet.dart';
 import '../../../core/widgets/primary_gradient_button.dart';
 import '../../../core/widgets/rounded_surface_card.dart';
-import '../../../core/widgets/secondary_capsule_button.dart';
 import '../../finance/presentation/financial_history_screen.dart';
 import '../../home/presentation/widgets/home_sheets.dart';
 import '../domain/budget_plan.dart';
@@ -116,19 +115,47 @@ class BudgetScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: AppSpacing.xs),
                           _AllocationSummary(appState: appState),
-                          const SizedBox(height: AppSpacing.xs),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: SecondaryCapsuleButton(
-                              key: const ValueKey('open_financial_history'),
-                              label: 'История монет',
-                              leading: const Icon(Icons.receipt_long_rounded),
-                              trailing: const Icon(Icons.chevron_right_rounded),
-                              onPressed: () => Navigator.of(context).push(
-                                MaterialPageRoute<void>(
-                                  builder: (_) =>
-                                      const FinancialHistoryScreen(),
-                                ),
+                          const SizedBox(height: AppSpacing.sm),
+                          RoundedSurfaceCard(
+                            key: const ValueKey('open_financial_history'),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.sm,
+                              vertical: AppSpacing.xs,
+                            ),
+                            onTap: () => Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) => const FinancialHistoryScreen(),
+                              ),
+                            ),
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(minHeight: 38),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 36,
+                                    height: 36,
+                                    decoration: const BoxDecoration(
+                                      color: AppColors.primaryBlueLight,
+                                      borderRadius: AppRadii.mediumBorder,
+                                    ),
+                                    child: const Icon(
+                                      Icons.receipt_long_rounded,
+                                      color: AppColors.primaryBlue,
+                                    ),
+                                  ),
+                                  const SizedBox(width: AppSpacing.sm),
+                                  const Expanded(
+                                    child: Text(
+                                      'История монет',
+                                      style: AppTextStyles.body,
+                                    ),
+                                  ),
+                                  const SizedBox(width: AppSpacing.xs),
+                                  const Icon(
+                                    Icons.chevron_right_rounded,
+                                    color: AppColors.primaryBlue,
+                                  ),
+                                ],
                               ),
                             ),
                           ),
@@ -281,8 +308,7 @@ class _BudgetHeroBanner extends StatelessWidget {
         final compact =
             constraints.maxWidth < 360 ||
             MediaQuery.textScalerOf(context).scale(1) > 1.2;
-        final showBubble =
-            !compact && constraints.maxWidth >= 520;
+        final showBubble = !compact && constraints.maxWidth >= 520;
         return RoundedSurfaceCard(
           padding: EdgeInsets.fromLTRB(
             AppSpacing.sm,

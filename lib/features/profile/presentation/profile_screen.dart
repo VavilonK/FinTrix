@@ -385,48 +385,70 @@ class _GrowthCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
-          Row(
+          // Shared table rows reserve the tallest title/status for every stage.
+          // Connectors participate only in the icon row, so labels cannot move them.
+          Table(
+            key: const ValueKey('pet_growth_stages'),
+            defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+            columnWidths: const {
+              0: FlexColumnWidth(),
+              1: FixedColumnWidth(24),
+              2: FlexColumnWidth(),
+              3: FixedColumnWidth(24),
+              4: FlexColumnWidth(),
+            },
             children: [
-              Expanded(
-                child: _GrowthStep(
-                  icon: Icons.pets_rounded,
-                  color: AppColors.green,
-                  label: PetGrowthStage.little.shortTitle,
-                  trailing: _StageStatus(
-                    stage: PetGrowthStage.little,
-                    current: stage,
-                  ),
-                ),
+              TableRow(
+                children: [
+                  for (final item in PetGrowthStage.values) ...[
+                    _GrowthIcon(
+                      key: ValueKey('growth_icon_${item.name}'),
+                      color: switch (item) {
+                        PetGrowthStage.little => AppColors.green,
+                        PetGrowthStage.growing => AppColors.primaryBlue,
+                        PetGrowthStage.grown => AppColors.purple,
+                      },
+                    ),
+                    if (item != PetGrowthStage.grown)
+                      const Icon(
+                        Icons.chevron_right_rounded,
+                        color: AppColors.disabled,
+                      ),
+                  ],
+                ],
               ),
-              const Icon(
-                Icons.chevron_right_rounded,
-                color: AppColors.disabled,
+              TableRow(
+                children: [
+                  for (final item in PetGrowthStage.values) ...[
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: AppSpacing.xxs,
+                      ),
+                      child: Text(
+                        item.shortTitle,
+                        textAlign: TextAlign.center,
+                        style: AppTextStyles.caption.copyWith(
+                          color: AppColors.navy,
+                        ),
+                      ),
+                    ),
+                    if (item != PetGrowthStage.grown) const SizedBox.shrink(),
+                  ],
+                ],
               ),
-              Expanded(
-                child: _GrowthStep(
-                  icon: Icons.pets_rounded,
-                  color: AppColors.primaryBlue,
-                  label: PetGrowthStage.growing.shortTitle,
-                  trailing: _StageStatus(
-                    stage: PetGrowthStage.growing,
-                    current: stage,
-                  ),
-                ),
-              ),
-              const Icon(
-                Icons.chevron_right_rounded,
-                color: AppColors.disabled,
-              ),
-              Expanded(
-                child: _GrowthStep(
-                  icon: Icons.pets_rounded,
-                  color: AppColors.purple,
-                  label: PetGrowthStage.grown.shortTitle,
-                  trailing: _StageStatus(
-                    stage: PetGrowthStage.grown,
-                    current: stage,
-                  ),
-                ),
+              TableRow(
+                children: [
+                  for (final item in PetGrowthStage.values) ...[
+                    Center(
+                      child: DefaultTextStyle(
+                        style: AppTextStyles.caption,
+                        textAlign: TextAlign.center,
+                        child: _StageStatus(stage: item, current: stage),
+                      ),
+                    ),
+                    if (item != PetGrowthStage.grown) const SizedBox.shrink(),
+                  ],
+                ],
               ),
             ],
           ),
@@ -460,42 +482,23 @@ class _StageStatus extends StatelessWidget {
   }
 }
 
-class _GrowthStep extends StatelessWidget {
-  const _GrowthStep({
-    this.icon,
-    required this.color,
-    required this.label,
-    required this.trailing,
-  });
+class _GrowthIcon extends StatelessWidget {
+  const _GrowthIcon({required this.color, super.key});
 
-  final IconData? icon;
   final Color color;
-  final String label;
-  final Widget trailing;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          width: 66,
-          height: 66,
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.14),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(icon, color: color, size: 36),
+    return Center(
+      child: Container(
+        width: 66,
+        height: 66,
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.14),
+          shape: BoxShape.circle,
         ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          textAlign: TextAlign.center,
-          maxLines: 2,
-          style: AppTextStyles.caption.copyWith(color: AppColors.navy),
-        ),
-        const SizedBox(height: 3),
-        DefaultTextStyle(style: AppTextStyles.caption, child: trailing),
-      ],
+        child: Icon(Icons.pets_rounded, color: color, size: 36),
+      ),
     );
   }
 }
@@ -519,7 +522,7 @@ class _ChildProfileCard extends StatelessWidget {
             label: 'Имя ребёнка',
             value: appState.childName,
           ),
-          const Divider(color: AppColors.borderLight),
+          const SizedBox(height: AppSpacing.xs),
           _ProfileRow(
             key: const ValueKey('child_age_read_only'),
             icon: Icons.cake_rounded,

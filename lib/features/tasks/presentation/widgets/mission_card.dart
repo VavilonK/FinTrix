@@ -28,108 +28,124 @@ class MissionCard extends StatelessWidget {
     return RoundedSurfaceCard(
       padding: const EdgeInsets.all(AppSpacing.xs),
       borderRadius: AppRadii.heroCard,
-      child: SingleChildScrollView(
-        child: Column(
-          children: [
-            Row(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final thumbnailSize = (constraints.maxWidth * 0.21 / textScale).clamp(
+            textScale > 1.3 ? 48.0 : 68.0,
+            76.0,
+          );
+          final actionWidth = (constraints.maxWidth * 0.42).clamp(136.0, 144.0);
+          return SingleChildScrollView(
+            child: Column(
               children: [
-                ClipRRect(
-                  borderRadius: AppRadii.mediumBorder,
-                  child: Container(
-                    key: const ValueKey('mission_thumbnail'),
-                    width: MediaQuery.sizeOf(context).width < 400 ? 48 : 64,
-                    height: textScale >= 1.5 ? 70 : 88,
-                    color: AppColors.primaryBlueLight,
-                    child: location.sceneAsset.isNotEmpty
-                        ? Image.asset(location.sceneAsset, fit: BoxFit.cover)
-                        : Icon(
-                            _locationIcon(location.id),
-                            color: AppColors.primaryBlue,
-                            size: 42,
+                Row(
+                  children: [
+                    ClipRRect(
+                      borderRadius: AppRadii.mediumBorder,
+                      child: Container(
+                        key: const ValueKey('mission_thumbnail'),
+                        width: thumbnailSize,
+                        height: thumbnailSize,
+                        color: AppColors.primaryBlueLight,
+                        child: location.sceneAsset.isNotEmpty
+                            ? Image.asset(
+                                location.sceneAsset,
+                                fit: BoxFit.cover,
+                              )
+                            : Icon(
+                                _locationIcon(location.id),
+                                color: AppColors.primaryBlue,
+                                size: 42,
+                              ),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.xs),
+                    Expanded(
+                      child: Column(
+                        key: const ValueKey('mission_metadata'),
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(location.title, style: AppTextStyles.label),
+                          const SizedBox(height: 3),
+                          const _MissionFact(
+                            icon: Icons.calendar_today_rounded,
+                            label: 'Сегодня',
                           ),
-                  ),
+                          _MissionFact(
+                            icon: Icons.check_circle_rounded,
+                            label:
+                                '${mission.tasks.length} заданий • ~${mission.estimatedMinutes} мин',
+                            color: AppColors.green,
+                          ),
+                          _RewardFact(maxReward: mission.maxReward),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.xs),
+                    SizedBox(
+                      width: actionWidth,
+                      child: PrimaryGradientButton(
+                        key: const ValueKey('mission_start'),
+                        label: 'Отправиться',
+                        onPressed: onStartMission,
+                        height: 52,
+                        maxLines: null,
+                        textOverflow: TextOverflow.clip,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.xxs,
+                          vertical: 8,
+                        ),
+                        itemSpacing: 2,
+                        textStyle: AppTextStyles.buttonCompact,
+                        trailing: const Icon(
+                          Icons.chevron_right_rounded,
+                          color: AppColors.surface,
+                          size: 18,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: AppSpacing.xs),
-                Expanded(
-                  child: Column(
-                    key: const ValueKey('mission_metadata'),
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                const SizedBox(height: AppSpacing.xs),
+                IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    key: const ValueKey('mission_categories'),
                     children: [
-                      Text(location.title, style: AppTextStyles.label),
-                      const SizedBox(height: 3),
-                      const _MissionFact(
-                        icon: Icons.calendar_today_rounded,
-                        label: 'Сегодня',
+                      Expanded(
+                        child: _MissionStep(
+                          icon: _themeIcon(mission.primaryTaskTheme),
+                          label: _themeLabel(mission.primaryTaskTheme),
+                          backgroundColor: const Color(0xFFFFE8F3),
+                          iconColor: AppColors.orange,
+                        ),
                       ),
-                      _MissionFact(
-                        icon: Icons.check_circle_rounded,
-                        label:
-                            '${mission.tasks.length} заданий • ~${mission.estimatedMinutes} мин',
-                        color: AppColors.green,
+                      const SizedBox(width: AppSpacing.xs),
+                      Expanded(
+                        child: _MissionStep(
+                          icon: _themeIcon(mission.secondaryTaskTheme),
+                          label: _themeLabel(mission.secondaryTaskTheme),
+                          backgroundColor: const Color(0xFFE2F6FF),
+                          iconColor: AppColors.primaryBlue,
+                        ),
                       ),
-                      _RewardFact(maxReward: mission.maxReward),
+                      const SizedBox(width: AppSpacing.xs),
+                      Expanded(
+                        child: _MissionStep(
+                          icon: Icons.monetization_on_rounded,
+                          label: 'до +${mission.maxReward}',
+                          backgroundColor: const Color(0xFFE9F8EF),
+                          iconColor: AppColors.purple,
+                        ),
+                      ),
                     ],
                   ),
                 ),
-                const SizedBox(width: AppSpacing.xs),
-                SizedBox(
-                  width: textScale >= 1.5 ? 144 : 136,
-                  child: PrimaryGradientButton(
-                    key: const ValueKey('mission_start'),
-                    label: 'Отправиться',
-                    onPressed: onStartMission,
-                    height: 52,
-                    maxLines: 3,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 8,
-                    ),
-                    itemSpacing: 2,
-                    textStyle: AppTextStyles.buttonCompact,
-                    trailing: const Icon(
-                      Icons.chevron_right_rounded,
-                      color: AppColors.surface,
-                      size: 18,
-                    ),
-                  ),
-                ),
               ],
             ),
-            const SizedBox(height: AppSpacing.xs),
-            Row(
-              key: const ValueKey('mission_categories'),
-              children: [
-                Expanded(
-                  child: _MissionStep(
-                    icon: _themeIcon(mission.primaryTaskTheme),
-                    label: _themeLabel(mission.primaryTaskTheme),
-                    backgroundColor: const Color(0xFFFFE8F3),
-                    iconColor: AppColors.orange,
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: _MissionStep(
-                    icon: _themeIcon(mission.secondaryTaskTheme),
-                    label: _themeLabel(mission.secondaryTaskTheme),
-                    backgroundColor: const Color(0xFFE2F6FF),
-                    iconColor: AppColors.primaryBlue,
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: _MissionStep(
-                    icon: Icons.monetization_on_rounded,
-                    label: 'до +${mission.maxReward}',
-                    backgroundColor: Color(0xFFE9F8EF),
-                    iconColor: AppColors.purple,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

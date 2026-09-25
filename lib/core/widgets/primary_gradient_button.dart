@@ -20,6 +20,7 @@ class PrimaryGradientButton extends StatelessWidget {
     this.textStyle,
     this.itemSpacing = AppSpacing.xs,
     this.maxLines = 1,
+    this.textOverflow = TextOverflow.ellipsis,
     super.key,
   });
 
@@ -34,7 +35,8 @@ class PrimaryGradientButton extends StatelessWidget {
   final EdgeInsetsGeometry? contentPadding;
   final TextStyle? textStyle;
   final double itemSpacing;
-  final int maxLines;
+  final int? maxLines;
+  final TextOverflow textOverflow;
 
   bool get _isEnabled => onPressed != null && !isLoading;
 
@@ -89,7 +91,7 @@ class PrimaryGradientButton extends StatelessWidget {
                               label,
                               maxLines: maxLines,
                               textAlign: TextAlign.center,
-                              overflow: TextOverflow.ellipsis,
+                              overflow: textOverflow,
                               style: textStyle ?? AppTextStyles.button,
                             ),
                           ),

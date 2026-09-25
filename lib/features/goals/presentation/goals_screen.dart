@@ -920,7 +920,7 @@ class _CurrentGoalCard extends StatelessWidget {
                   ),
                 ),
                 if (!completed && appState.savings > 0) ...[
-                  const SizedBox(height: AppSpacing.xs),
+                  const SizedBox(height: AppSpacing.sm),
                   SecondaryCapsuleButton(
                     key: const ValueKey('open_withdrawal_sheet'),
                     label: 'Взять из копилки',
