@@ -19,13 +19,14 @@ SOURCE = os.path.join(ROOT, 'assets', 'animations', 'fox', 'source')
 RUNTIME = os.path.join(ROOT, 'assets', 'animations', 'fox', 'runtime')
 
 SIDE = 720  # Same canvas as the previously approved Home idle WebP.
-FPS = 30  # Sources are 60 fps; every clip is resampled identically.
+FPS = 60  # Sources are 60 fps and are kept at their native frame rate.
 QUALITY = 75
 METHOD = 4
 
 # runtime name -> (source name, loops)
 CLIPS = {
     'fox_happy_idle': ('fox_happy_idle.webm', True),
+    'fox_hungry_idle': ('fox_hungry_idle.webm', True),
     'fox_pet_happy': ('fox_pet_happy.webm', False),
     'fox_pet_hungry': ('fox_pet_hungry.webm', False),
     'fox_feed_happy_basic': ('fox_feed_happy_basic.webm', False),
@@ -53,14 +54,9 @@ def decode(source, tmp):
     return [os.path.join(tmp, f) for f in sorted(os.listdir(tmp))]
 
 
-def pick(count, loops):
-    target = (count + 1) // 2
-    if loops:
-        # A loop wraps from its last frame back to frame 0, so keep a uniform
-        # step instead of duplicating the anchor at both ends.
-        return list(range(0, count, 2))[:target]
-    # One-shot clips must end on the exact final source frame (idle anchor).
-    return [round(k * (count - 1) / (target - 1)) for k in range(target)]
+def pick(count):
+    # Native 60 fps: every source frame, so first and last anchors are exact.
+    return list(range(count))
 
 
 def load(path):
@@ -77,7 +73,7 @@ def convert(name):
     source_name, loops = CLIPS[name]
     with tempfile.TemporaryDirectory() as tmp:
         paths = decode(os.path.join(SOURCE, source_name), tmp)
-        frames = [load(paths[i]) for i in pick(len(paths), loops)]
+        frames = [load(paths[i]) for i in pick(len(paths))]
     out = os.path.join(RUNTIME, name + '.webp')
     frames[0].save(
         out, save_all=True, append_images=frames[1:], duration=durations(len(frames)),
@@ -99,7 +95,8 @@ def still(name):
 if __name__ == '__main__':
     os.makedirs(RUNTIME, exist_ok=True)
     wanted = sys.argv[1:] or [*CLIPS, *STILLS]
-    with ProcessPoolExecutor() as pool:
+    # Each 60 fps clip holds ~300 decoded 720px frames (~600 MB) in memory.
+    with ProcessPoolExecutor(max_workers=3) as pool:
         jobs = [pool.submit(convert if n in CLIPS else still, n) for n in wanted]
         for job in jobs:
             name, frames, ms, size = job.result()

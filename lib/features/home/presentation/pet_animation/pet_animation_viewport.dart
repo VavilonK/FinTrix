@@ -29,7 +29,12 @@ class PetAnimationViewport extends StatefulWidget {
 
   /// Idle frames advance this much faster while an action waits for the idle
   /// loop to come back to its anchor pose.
-  static const catchUpSpeed = 3;
+  static const catchUpSpeed = 4;
+
+  /// Fast-forwarding is bound by decode speed; after this long the action
+  /// starts anyway so a tap never feels ignored (a small pose jump is
+  /// preferred over a multi-second wait on slow devices).
+  static const catchUpBudget = Duration(seconds: 1);
 
   /// Places the shared animation canvas so the anchor pose keeps the height
   /// and paw line of the canonical PNG (1214x1295, opaque y=24..1233).
@@ -61,6 +66,7 @@ class _PetAnimationViewportState extends State<PetAnimationViewport>
   ui.Image? _image;
   Timer? _frameTimer;
   bool _catchingUp = false;
+  DateTime? _catchUpStartedAt;
   bool _foreground = true;
   bool _visible = true;
   final Set<String> _failedAssets = {};
@@ -149,6 +155,7 @@ class _PetAnimationViewportState extends State<PetAnimationViewport>
       // keeps its place in the loop instead of restarting.
       _sessionPlayId = playId;
       _catchingUp = false;
+      _catchUpStartedAt = null;
       _ensureTicking();
       return;
     }
@@ -160,6 +167,7 @@ class _PetAnimationViewportState extends State<PetAnimationViewport>
     if (!wanted.isIdle && !_atAnchor()) {
       // Let the idle finish its loop quickly and cut at its anchor frame.
       _catchingUp = true;
+      _catchUpStartedAt ??= DateTime.now();
       _ensureTicking();
       return;
     }
@@ -181,6 +189,7 @@ class _PetAnimationViewportState extends State<PetAnimationViewport>
     // Hold the frame on screen until the next clip's first frame is ready.
     _cancelTick();
     _catchingUp = false;
+    _catchUpStartedAt = null;
     _loadingPlayId = playId;
     final asset = state.definition.asset;
     _cache!.take(asset).then((session) {
@@ -248,7 +257,13 @@ class _PetAnimationViewportState extends State<PetAnimationViewport>
       // frame for when playback resumes.
       if (!mounted || session != _session || _frameTimer != tick) return;
       _frameTimer = null;
-      if (_catchingUp && session.isLastFrame && !_coordinator.current.isIdle) {
+      final overBudget =
+          _catchingUp &&
+          DateTime.now().difference(_catchUpStartedAt ?? DateTime.now()) >
+              PetAnimationViewport.catchUpBudget;
+      if (_catchingUp &&
+          (session.isLastFrame || overBudget) &&
+          !_coordinator.current.isIdle) {
         // The loop is back at its anchor: start the action in its place.
         _switchTo(_coordinator.current, _coordinator.playId);
         return;
@@ -273,6 +288,7 @@ class _PetAnimationViewportState extends State<PetAnimationViewport>
   void _stop() {
     _cancelTick();
     _catchingUp = false;
+    _catchUpStartedAt = null;
     _loadingPlayId = null;
     _sessionPlayId = null;
     _sessionState = null;

@@ -63,8 +63,8 @@ class GoalsScreen extends StatelessWidget {
                 ),
                 savingsLeading: Image.asset(
                   AppAssets.financePiggyBank,
-                  width: 34,
-                  height: 34,
+                  width: 38,
+                  height: 38,
                 ),
                 showSavingsChevron: false,
                 trailing: AppSettingsButton(
@@ -330,7 +330,14 @@ class GoalsScreen extends StatelessWidget {
             return Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('Сколько отложим?', style: AppTextStyles.heading),
+                const _PiggyIllustration(),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  'Сколько отложим?',
+                  style: AppTextStyles.heading.copyWith(
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
                 const SizedBox(height: 4),
                 Text(
                   'Доступно ${_formatCoins(appState.balance)} монет',
@@ -379,7 +386,7 @@ class GoalsScreen extends StatelessWidget {
                     Text(
                       _formatCoins(amount),
                       key: const ValueKey('goal_selected_amount'),
-                      style: AppTextStyles.display.copyWith(fontSize: 48),
+                      style: AppTextStyles.display.copyWith(fontSize: 52),
                     ),
                     const SizedBox(width: AppSpacing.xs),
                     Image.asset(
@@ -390,22 +397,45 @@ class GoalsScreen extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: AppSpacing.xs),
-                Slider(
-                  key: const ValueKey('goal_amount_slider'),
-                  value: maximum == 0 ? 0 : amount.toDouble(),
-                  min: 0,
-                  max: maximum == 0 ? 1 : maximum.toDouble(),
-                  activeColor: AppColors.primaryBlue,
-                  inactiveColor: AppColors.track,
-                  onChanged: maximum == 0
-                      ? null
-                      : (value) {
-                          setModalState(() {
-                            amount = value.round();
-                            awaitingPlanConfirmation = false;
-                          });
-                        },
+                SliderTheme(
+                  data: SliderTheme.of(context).copyWith(
+                    trackHeight: 12,
+                    activeTrackColor: AppColors.primaryBlue,
+                    inactiveTrackColor: AppColors.track,
+                    thumbColor: AppColors.primaryBlue,
+                    thumbShape: const _RingThumbShape(),
+                    overlayShape: const RoundSliderOverlayShape(
+                      overlayRadius: 22,
+                    ),
+                  ),
+                  child: Slider(
+                    key: const ValueKey('goal_amount_slider'),
+                    value: maximum == 0 ? 0 : amount.toDouble(),
+                    min: 0,
+                    max: maximum == 0 ? 1 : maximum.toDouble(),
+                    activeColor: AppColors.primaryBlue,
+                    inactiveColor: AppColors.track,
+                    onChanged: maximum == 0
+                        ? null
+                        : (value) {
+                            setModalState(() {
+                              amount = value.round();
+                              awaitingPlanConfirmation = false;
+                            });
+                          },
+                  ),
                 ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('0', style: AppTextStyles.caption),
+                      Text(_formatCoins(maximum), style: AppTextStyles.caption),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
                 if (plannedSuggestion > 0) ...[
                   SizedBox(
                     width: double.infinity,
@@ -452,8 +482,10 @@ class GoalsScreen extends StatelessWidget {
                   width: double.infinity,
                   padding: const EdgeInsets.all(AppSpacing.sm),
                   decoration: const BoxDecoration(
-                    color: Color(0xFFE8F8EA),
-                    borderRadius: AppRadii.mediumBorder,
+                    gradient: LinearGradient(
+                      colors: [Color(0xFFDDF5E2), Color(0xFFF0FBF2)],
+                    ),
+                    borderRadius: AppRadii.card,
                   ),
                   child: Row(
                     children: [
@@ -465,13 +497,32 @@ class GoalsScreen extends StatelessWidget {
                       ),
                       const SizedBox(width: AppSpacing.xs),
                       Expanded(
-                        child: Text(
-                          amount == 0
-                              ? 'Выбери сумму, которую хочешь отложить.'
-                              : 'После этого до цели останется '
-                                    '${_formatCoins((appState.goalRemaining - amount).clamp(0, appState.goalPrice))} монет.',
-                          style: AppTextStyles.body.copyWith(fontSize: 15),
-                        ),
+                        child: amount == 0
+                            ? Text(
+                                'Выбери сумму, которую хочешь отложить.',
+                                style: AppTextStyles.body.copyWith(
+                                  fontSize: 15,
+                                ),
+                              )
+                            : Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'До цели «${appState.selectedGoal.title}» останется',
+                                    style: AppTextStyles.caption.copyWith(
+                                      color: const Color(0xFF2E6B3B),
+                                    ),
+                                  ),
+                                  Text(
+                                    '${_formatCoins((appState.goalRemaining - amount).clamp(0, appState.goalPrice))} монет',
+                                    style: AppTextStyles.cardTitle.copyWith(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w900,
+                                      color: const Color(0xFF1F4D2A),
+                                    ),
+                                  ),
+                                ],
+                              ),
                       ),
                     ],
                   ),
@@ -566,15 +617,16 @@ class GoalsScreen extends StatelessWidget {
                           }
                         }
                       : null,
-                  leading: Image.asset(
-                    AppAssets.financePiggyBank,
-                    width: 34,
-                    height: 34,
-                  ),
                 ),
                 TextButton(
                   onPressed: () => Navigator.of(sheetContext).pop(),
-                  child: const Text('Не сейчас'),
+                  child: Text(
+                    'Не сейчас',
+                    style: AppTextStyles.body.copyWith(
+                      color: AppColors.primaryBlue,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
                 ),
               ],
             );
@@ -724,9 +776,15 @@ class _GoalsHeroBanner extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Мои цели', style: AppTextStyles.cardTitle),
                     Text(
-                      'Большие мечты начинаются\nс маленьких шагов!',
+                      'Мои цели',
+                      style: AppTextStyles.cardTitle.copyWith(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    Text(
+                      'Большие мечты начинаются с маленьких шагов!',
                       style: AppTextStyles.bodySecondary.copyWith(fontSize: 14),
                     ),
                   ],
@@ -783,11 +841,13 @@ class _CurrentGoalCard extends StatelessWidget {
           Container(
             width: double.infinity,
             height: 238,
+            clipBehavior: Clip.antiAlias,
             decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFFE9F4FF), Color(0xFFFFF4E7)],
+              // The goal stands in Ryzhik's room, as in the reference art.
+              image: DecorationImage(
+                image: AssetImage(AppAssets.backgroundBedroomDay),
+                fit: BoxFit.cover,
+                alignment: Alignment(0, 0.35),
               ),
               borderRadius: BorderRadius.vertical(
                 top: Radius.circular(AppRadii.extraLarge),
@@ -796,6 +856,17 @@ class _CurrentGoalCard extends StatelessWidget {
             child: Stack(
               alignment: Alignment.center,
               children: [
+                const Positioned.fill(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [Color(0x14FFFFFF), Color(0x66FFFFFF)],
+                      ),
+                    ),
+                  ),
+                ),
                 const Positioned(
                   left: 24,
                   top: 24,
@@ -805,7 +876,7 @@ class _CurrentGoalCard extends StatelessWidget {
                     size: 34,
                   ),
                 ),
-                _GoalArtwork(goal: goal, size: 220),
+                _GoalArtwork(goal: goal, size: 220, plain: true),
                 if (reached || completed)
                   Positioned(
                     right: 18,
@@ -837,7 +908,9 @@ class _CurrentGoalCard extends StatelessWidget {
               children: [
                 Text(
                   reached || completed ? '🎉 Мечта достигнута!' : goal.title,
-                  style: AppTextStyles.sectionTitle,
+                  style: AppTextStyles.sectionTitle.copyWith(
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text.rich(
@@ -847,7 +920,9 @@ class _CurrentGoalCard extends StatelessWidget {
                         text: _formatCoins(
                           completed ? goal.price : appState.savings,
                         ),
-                        style: AppTextStyles.cardTitle,
+                        style: AppTextStyles.cardTitle.copyWith(
+                          fontWeight: FontWeight.w900,
+                        ),
                       ),
                       TextSpan(
                         text: ' / ${_formatCoins(goal.price)} монет',
@@ -971,7 +1046,12 @@ class _GoalStat extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(label, maxLines: 2, style: AppTextStyles.caption),
-                Text(value, style: AppTextStyles.body),
+                Text(
+                  value,
+                  style: AppTextStyles.cardTitle.copyWith(
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
               ],
             ),
           ),
@@ -998,7 +1078,10 @@ class _NextGoalCard extends StatelessWidget {
     final details = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(goal.title, style: AppTextStyles.cardTitle),
+        Text(
+          goal.title,
+          style: AppTextStyles.cardTitle.copyWith(fontWeight: FontWeight.w900),
+        ),
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -1047,10 +1130,17 @@ class _NextGoalCard extends StatelessWidget {
 }
 
 class _GoalArtwork extends StatelessWidget {
-  const _GoalArtwork({required this.goal, required this.size});
+  const _GoalArtwork({
+    required this.goal,
+    required this.size,
+    this.plain = false,
+  });
 
   final SavingsGoal goal;
   final double size;
+
+  /// Without the pastel tile, for artwork shown over a scene.
+  final bool plain;
 
   @override
   Widget build(BuildContext context) {
@@ -1059,10 +1149,12 @@ class _GoalArtwork extends StatelessWidget {
       width: size,
       height: size,
       padding: EdgeInsets.all(size * 0.08),
-      decoration: BoxDecoration(
-        color: _goalColor(goal.id),
-        borderRadius: BorderRadius.circular(size * 0.2),
-      ),
+      decoration: plain
+          ? null
+          : BoxDecoration(
+              color: _goalColor(goal.id),
+              borderRadius: BorderRadius.circular(size * 0.2),
+            ),
       child: asset != null
           ? Image.asset(asset, fit: BoxFit.contain)
           : Icon(
@@ -1095,7 +1187,7 @@ class _AmountPreset extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: selected ? AppColors.primaryBlue : AppColors.surfaceSoft,
+      color: selected ? AppColors.primaryBlue : const Color(0xFFEAF0FC),
       borderRadius: AppRadii.capsule,
       child: InkWell(
         onTap: enabled ? onTap : null,
@@ -1113,7 +1205,8 @@ class _AmountPreset extends StatelessWidget {
           ),
           child: Text(
             '$amount',
-            style: AppTextStyles.body.copyWith(
+            style: AppTextStyles.cardTitle.copyWith(
+              fontWeight: FontWeight.w900,
               color: !enabled
                   ? AppColors.disabled
                   : selected
@@ -1252,4 +1345,86 @@ String _dreamName(SavingsGoal goal) {
   return value.isEmpty
       ? goal.title
       : '${value[0].toUpperCase()}${value.substring(1)}';
+}
+
+class _PiggyIllustration extends StatelessWidget {
+  const _PiggyIllustration();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 150,
+      height: 86,
+      child: Stack(
+        alignment: Alignment.bottomCenter,
+        children: [
+          Image.asset(AppAssets.financePiggyBank, height: 72),
+          Positioned(
+            top: 0,
+            child: Image.asset(AppAssets.financeCoinSingle, width: 30),
+          ),
+          for (final (x, y, angle) in const [
+            (-50.0, 4.0, -0.5),
+            (-58.0, 26.0, -1.2),
+            (50.0, 4.0, 0.5),
+            (58.0, 26.0, 1.2),
+          ])
+            Positioned(
+              top: y,
+              left: 75 + x - 3,
+              child: Transform.rotate(
+                angle: angle,
+                child: Container(
+                  width: 6,
+                  height: 18,
+                  decoration: const BoxDecoration(
+                    color: AppColors.yellow,
+                    borderRadius: AppRadii.capsule,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// White ring thumb with a blue core, like the reference slider.
+class _RingThumbShape extends SliderComponentShape {
+  const _RingThumbShape();
+
+  @override
+  Size getPreferredSize(bool isEnabled, bool isDiscrete) =>
+      const Size.fromRadius(15);
+
+  @override
+  void paint(
+    PaintingContext context,
+    Offset center, {
+    required Animation<double> activationAnimation,
+    required Animation<double> enableAnimation,
+    required bool isDiscrete,
+    required TextPainter labelPainter,
+    required RenderBox parentBox,
+    required SliderThemeData sliderTheme,
+    required TextDirection textDirection,
+    required double value,
+    required double textScaleFactor,
+    required Size sizeWithOverflow,
+  }) {
+    final canvas = context.canvas;
+    canvas.drawShadow(
+      Path()..addOval(Rect.fromCircle(center: center, radius: 15)),
+      const Color(0x662780F7),
+      4,
+      false,
+    );
+    canvas.drawCircle(center, 15, Paint()..color = AppColors.surface);
+    canvas.drawCircle(
+      center,
+      10,
+      Paint()..color = sliderTheme.thumbColor ?? AppColors.primaryBlue,
+    );
+  }
 }

@@ -49,9 +49,9 @@ class AccountHeader extends StatelessWidget {
             ? AppSpacing.xs
             : AppSpacing.screenHorizontal(width);
         final avatarSize = compact
-            ? (width * 0.14).clamp(52, 58).toDouble()
+            ? (width * 0.13).clamp(50, 56).toDouble()
             : (width * 0.15).clamp(52, 64).toDouble();
-        final gap = compact ? 6.0 : AppSpacing.sm;
+        final gap = compact ? 5.0 : AppSpacing.sm;
 
         final avatarBadge = AvatarLevelBadge(
           avatar: avatar,
@@ -99,7 +99,7 @@ class AccountHeader extends StatelessWidget {
                 children: [
                   avatarBadge,
                   SizedBox(width: gap),
-                  Expanded(flex: 6, child: balanceChip),
+                  Expanded(flex: 7, child: balanceChip),
                   SizedBox(width: gap),
                   Expanded(flex: 7, child: savingsChip),
                   if (trailing != null) ...[

@@ -222,9 +222,10 @@ void main() {
     addTearDown(coordinator.dispose);
     coordinator.playFeed(FoodType.basic, after: happy);
     coordinator.actionStarted(coordinator.playId);
-    await tester.pump(const Duration(milliseconds: 5100));
+    // Real completion comes from the viewport; the watchdog is a late net.
+    await tester.pump(const Duration(milliseconds: 5100) * 2);
     expect(coordinator.current, PetAnimationState.feedHappyBasic);
-    await tester.pump(PetAnimationCoordinator.endGrace);
+    await tester.pump(const Duration(milliseconds: 5100));
     expect(coordinator.current, PetAnimationState.happyIdle);
   });
 

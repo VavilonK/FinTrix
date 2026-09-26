@@ -77,7 +77,13 @@ class MissionCard extends StatelessWidget {
                             mainAxisAlignment: MainAxisAlignment.start,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(location.title, style: AppTextStyles.label),
+                              Text(
+                                location.title,
+                                style: AppTextStyles.label.copyWith(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
                               const SizedBox(height: 3),
                               const _MissionFact(
                                 icon: Icons.calendar_today_rounded,
@@ -95,8 +101,12 @@ class MissionCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 6),
                         SizedBox(
-                          width: 112,
-                          child: _MissionStartButton(onPressed: onStartMission),
+                          width: constraints.maxWidth >= 370 ? 120 : 108,
+                          child: Center(
+                            child: _MissionStartButton(
+                              onPressed: onStartMission,
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -203,6 +213,7 @@ class _MissionFact extends StatelessWidget {
               label,
               style: AppTextStyles.bodySmall.copyWith(
                 color: AppColors.navy,
+                fontSize: 13,
                 height: 1.15,
               ),
             ),
@@ -236,6 +247,7 @@ class _RewardFact extends StatelessWidget {
               'Награда: до $maxReward монет',
               style: AppTextStyles.bodySmall.copyWith(
                 color: AppColors.navy,
+                fontSize: 13,
                 height: 1.15,
               ),
             ),
@@ -262,21 +274,45 @@ class _MissionStep extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      constraints: const BoxConstraints(minHeight: 54),
-      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 4),
+      constraints: const BoxConstraints(minHeight: 56),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: AppRadii.mediumBorder,
+        border: Border.all(color: AppColors.surface, width: 1.5),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: iconColor, size: 25),
-          const SizedBox(width: AppSpacing.xxs),
+          Container(
+            width: 30,
+            height: 30,
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: iconColor.withAlpha(50),
+                  offset: const Offset(0, 2),
+                  blurRadius: 4,
+                ),
+              ],
+            ),
+            child: Icon(icon, color: iconColor, size: 20),
+          ),
+          const SizedBox(width: 6),
           Flexible(
-            child: Text(
-              label,
-              style: AppTextStyles.caption.copyWith(color: AppColors.navy),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                label,
+                maxLines: 1,
+                style: AppTextStyles.caption.copyWith(
+                  color: AppColors.navy,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ),
           ),
         ],
@@ -300,34 +336,38 @@ class _MissionStartButton extends StatelessWidget {
       child: DecoratedBox(
         decoration: const BoxDecoration(
           gradient: AppGradients.primaryCta,
-          borderRadius: AppRadii.card,
+          borderRadius: AppRadii.capsule,
           boxShadow: AppShadows.primaryControl,
         ),
         child: Material(
           color: AppColors.transparent,
-          borderRadius: AppRadii.card,
+          borderRadius: AppRadii.capsule,
           clipBehavior: Clip.antiAlias,
           child: InkWell(
             onTap: onPressed,
             child: ConstrainedBox(
               constraints: const BoxConstraints(minHeight: 52),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 4),
-                child: Column(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      'Отправиться',
-                      textAlign: TextAlign.center,
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.surface,
-                        fontWeight: FontWeight.w800,
+                    Flexible(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          'Отправиться',
+                          maxLines: 1,
+                          style: AppTextStyles.buttonCompact.copyWith(
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
                       ),
                     ),
                     const Icon(
                       Icons.chevron_right_rounded,
                       color: AppColors.surface,
-                      size: 18,
+                      size: 20,
                     ),
                   ],
                 ),

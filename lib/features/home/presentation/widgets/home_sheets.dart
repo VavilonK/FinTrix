@@ -5,6 +5,7 @@ import '../../../../core/state/app_controller.dart';
 import '../../../../core/state/app_scope.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radii.dart';
+import '../../../../core/theme/app_shadows.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_modal_sheet.dart';
@@ -316,30 +317,120 @@ class _FeedPetSheet extends StatefulWidget {
 class _FeedPetSheetState extends State<_FeedPetSheet> {
   bool _insufficientFunds = false;
   FoodType? _pendingFood;
+  FoodType _selected = FoodType.basic;
 
   @override
   Widget build(BuildContext context) {
     final state = AppScope.of(context);
+    final balanceAfter = state.balance - _selected.cost;
+    // Three columns stop fitting whole words once text is enlarged.
+    final stacked =
+        MediaQuery.textScalerOf(context).scale(1) >= 1.3 ||
+        MediaQuery.sizeOf(context).width < 340;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Чем угостим Рыжика?', style: AppTextStyles.heading),
-        const SizedBox(height: AppSpacing.xxs),
-        Text(
-          'Баланс: ${_coins(state.balance)} монет',
-          style: AppTextStyles.bodySecondary,
+        Row(
+          children: [
+            const SizedBox(width: 44),
+            Expanded(
+              child: Text(
+                'Чем угостим Рыжика?',
+                textAlign: TextAlign.center,
+                style: AppTextStyles.sectionTitle.copyWith(
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+            _CloseButton(onPressed: () => Navigator.of(context).pop()),
+          ],
         ),
         const SizedBox(height: AppSpacing.md),
-        for (final food in FoodType.values) ...[
-          _FoodOption(
-            key: ValueKey('feed_${food.name}'),
-            type: food,
-            onTap: () => _feed(state, food),
+        if (stacked)
+          for (final food in FoodType.values) ...[
+            _FoodOption(
+              key: ValueKey('feed_${food.name}'),
+              type: food,
+              horizontal: true,
+              selected: food == _selected,
+              onTap: () => _select(food),
+            ),
+            if (food != FoodType.values.last)
+              const SizedBox(height: AppSpacing.xs),
+          ]
+        else
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (final food in FoodType.values) ...[
+                  Expanded(
+                    child: _FoodOption(
+                      key: ValueKey('feed_${food.name}'),
+                      type: food,
+                      selected: food == _selected,
+                      onTap: () => _select(food),
+                    ),
+                  ),
+                  if (food != FoodType.values.last)
+                    const SizedBox(width: AppSpacing.xs),
+                ],
+              ],
+            ),
           ),
-          if (food != FoodType.values.last)
-            const SizedBox(height: AppSpacing.xs),
-        ],
+        const SizedBox(height: AppSpacing.md),
+        Row(
+          children: [
+            const Expanded(child: Divider()),
+            Flexible(
+              flex: 6,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: balanceAfter >= 0
+                      ? Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Баланс после покупки: ',
+                              style: AppTextStyles.caption,
+                            ),
+                            Image.asset(
+                              AppAssets.financeCoinSingle,
+                              width: 20,
+                              height: 20,
+                            ),
+                            const SizedBox(width: 3),
+                            Text(
+                              _coins(balanceAfter),
+                              style: AppTextStyles.label.copyWith(fontSize: 16),
+                            ),
+                          ],
+                        )
+                      : Text(
+                          'Не хватает ${_coins(-balanceAfter)} монет',
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.pink,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                ),
+              ),
+            ),
+            const Expanded(child: Divider()),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        if (_pendingFood == null)
+          PrimaryGradientButton(
+            key: const ValueKey('feed_confirm'),
+            label: 'Покормить за ${_selected.cost}',
+            height: 56,
+            maxLines: 2,
+            onPressed: () => _feed(state, _selected),
+          ),
         if (_insufficientFunds) ...[
           const SizedBox(height: AppSpacing.md),
           RoundedSurfaceCard(
@@ -364,7 +455,6 @@ class _FeedPetSheetState extends State<_FeedPetSheet> {
           ),
         ],
         if (_pendingFood case final food?) ...[
-          const SizedBox(height: AppSpacing.md),
           RoundedSurfaceCard(
             backgroundColor: const Color(0xFFFFF3D8),
             padding: const EdgeInsets.all(AppSpacing.sm),
@@ -409,6 +499,14 @@ class _FeedPetSheetState extends State<_FeedPetSheet> {
     );
   }
 
+  void _select(FoodType food) {
+    setState(() {
+      _selected = food;
+      _insufficientFunds = false;
+      _pendingFood = null;
+    });
+  }
+
   void _feed(
     AppController state,
     FoodType food, {
@@ -435,59 +533,154 @@ class _FeedPetSheetState extends State<_FeedPetSheet> {
   }
 }
 
+class _CloseButton extends StatelessWidget {
+  const _CloseButton({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: 'Закрыть',
+      child: InkResponse(
+        key: const ValueKey('sheet_close'),
+        onTap: onPressed,
+        radius: 24,
+        child: const SizedBox.square(
+          dimension: 44,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: AppColors.backgroundLavender,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.close_rounded,
+              color: AppColors.secondaryText,
+              size: 24,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _FoodOption extends StatelessWidget {
-  const _FoodOption({required this.type, required this.onTap, super.key});
+  const _FoodOption({
+    required this.type,
+    required this.selected,
+    required this.onTap,
+    this.horizontal = false,
+    super.key,
+  });
 
   final FoodType type;
+  final bool selected;
   final VoidCallback onTap;
+
+  /// Row layout used when enlarged text needs the full sheet width.
+  final bool horizontal;
 
   @override
   Widget build(BuildContext context) {
     final (label, asset) = switch (type) {
-      FoodType.basic => ('Обычный корм', AppAssets.foodBasicBowl),
+      FoodType.basic => ('Корм', AppAssets.foodBasicBowl),
       FoodType.healthy => ('Полезный перекус', AppAssets.foodHealthySnack),
       FoodType.treat => ('Вкусняшка', AppAssets.foodTreatDessert),
     };
-    final details = switch (type) {
-      FoodType.basic => 'Сытость +30 · Настроение +4',
-      FoodType.healthy => 'Сытость +22 · Настроение +8 · Забота +3',
-      FoodType.treat => 'Сытость +15 · Настроение +15',
-    };
 
-    return RoundedSurfaceCard(
-      onTap: onTap,
-      padding: const EdgeInsets.all(AppSpacing.xs),
-      child: Row(
-        children: [
-          Container(
-            width: 72,
-            height: 72,
-            padding: const EdgeInsets.all(5),
-            decoration: const BoxDecoration(
-              color: AppColors.primaryBlueLight,
-              borderRadius: AppRadii.mediumBorder,
+    return Semantics(
+      selected: selected,
+      button: true,
+      label: '$label, ${type.cost} монет',
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.primaryBlueLight : AppColors.surface,
+          borderRadius: AppRadii.card,
+          border: Border.all(
+            color: selected ? AppColors.primaryBlue : AppColors.borderLight,
+            width: selected ? 2.5 : 1,
+          ),
+          boxShadow: selected ? AppShadows.primaryControl : AppShadows.card,
+        ),
+        child: Material(
+          color: AppColors.transparent,
+          borderRadius: AppRadii.card,
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(6, 10, 6, 10),
+              child: horizontal
+                  ? Row(
+                      children: [
+                        Image.asset(asset, width: 64, height: 56),
+                        const SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: Text(
+                            label,
+                            style: AppTextStyles.label.copyWith(fontSize: 16),
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.xs),
+                        Image.asset(
+                          AppAssets.financeCoinSingle,
+                          width: 22,
+                          height: 22,
+                        ),
+                        const SizedBox(width: 4),
+                        Text('${type.cost}', style: AppTextStyles.label),
+                        const SizedBox(width: 6),
+                      ],
+                    )
+                  : Column(
+                      children: [
+                        AspectRatio(
+                          aspectRatio: 1.15,
+                          child: Image.asset(asset, fit: BoxFit.contain),
+                        ),
+                        const SizedBox(height: 6),
+                        Expanded(
+                          child: Center(
+                            child: Text(
+                              label,
+                              textAlign: TextAlign.center,
+                              style: AppTextStyles.label.copyWith(
+                                fontSize: MediaQuery.sizeOf(context).width < 400
+                                    ? 13
+                                    : 15,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Image.asset(
+                                AppAssets.financeCoinSingle,
+                                width: 22,
+                                height: 22,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                '${type.cost} монет',
+                                style: AppTextStyles.label.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
             ),
-            child: Image.asset(asset, fit: BoxFit.contain),
           ),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(label, style: AppTextStyles.cardTitle),
-                const SizedBox(height: 3),
-                Text(details, style: AppTextStyles.caption),
-              ],
-            ),
-          ),
-          const SizedBox(width: AppSpacing.xs),
-          Column(
-            children: [
-              Image.asset(AppAssets.financeCoinSingle, width: 25, height: 25),
-              Text('${type.cost}', style: AppTextStyles.body),
-            ],
-          ),
-        ],
+        ),
       ),
     );
   }

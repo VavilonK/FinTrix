@@ -14,6 +14,7 @@ import '../../../core/widgets/amount_stepper.dart';
 import '../../../core/widgets/app_progress_bar.dart';
 import '../../../core/widgets/primary_gradient_button.dart';
 import '../../../core/widgets/rounded_surface_card.dart';
+import '../../../core/widgets/speech_bubble.dart';
 import '../../finance/presentation/financial_history_screen.dart';
 import '../../home/presentation/widgets/home_sheets.dart';
 import '../domain/budget_plan.dart';
@@ -66,8 +67,8 @@ class BudgetScreen extends StatelessWidget {
                 ),
                 savingsLeading: Image.asset(
                   AppAssets.financePiggyBank,
-                  width: 34,
-                  height: 34,
+                  width: 38,
+                  height: 38,
                 ),
                 onSavingsTap: onOpenGoals,
                 trailing: AppSettingsButton(
@@ -90,7 +91,7 @@ class BudgetScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _BudgetHeroBanner(age: appState.age),
+                          const _BudgetHeroBanner(),
                           const SizedBox(height: AppSpacing.sm),
                           Padding(
                             padding: const EdgeInsets.symmetric(
@@ -289,26 +290,21 @@ class BudgetScreen extends StatelessWidget {
 }
 
 class _BudgetHeroBanner extends StatelessWidget {
-  const _BudgetHeroBanner({required this.age});
-
-  final int age;
+  const _BudgetHeroBanner();
 
   @override
   Widget build(BuildContext context) {
-    final hint = age <= 8
-        ? 'Сначала отложим на важное,\nпотом выберем приятное!'
-        : 'Распредели деньги так, чтобы хватило\nи на нужное, и на мечту.';
     return LayoutBuilder(
       builder: (context, constraints) {
         final compact =
             constraints.maxWidth < 360 ||
             MediaQuery.textScalerOf(context).scale(1) > 1.2;
-        final showBubble = !compact && constraints.maxWidth >= 520;
+        final showBubble = !compact && constraints.maxWidth >= 360;
         return RoundedSurfaceCard(
           padding: EdgeInsets.fromLTRB(
             AppSpacing.sm,
             AppSpacing.sm,
-            compact ? 85 : 104,
+            compact ? 85 : (showBubble ? 178 : 104),
             AppSpacing.sm,
           ),
           child: Stack(
@@ -317,16 +313,17 @@ class _BudgetHeroBanner extends StatelessWidget {
               Row(
                 children: [
                   Container(
-                    width: 66,
-                    height: 66,
+                    width: 52,
+                    height: 52,
                     decoration: const BoxDecoration(
                       gradient: AppGradients.primaryCta,
                       borderRadius: AppRadii.mediumBorder,
+                      boxShadow: AppShadows.primaryControl,
                     ),
                     child: const Icon(
                       Icons.account_balance_wallet_rounded,
                       color: AppColors.surface,
-                      size: 42,
+                      size: 34,
                     ),
                   ),
                   const SizedBox(width: AppSpacing.sm),
@@ -334,7 +331,14 @@ class _BudgetHeroBanner extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Мой бюджет', style: AppTextStyles.cardTitle),
+                        Text(
+                          'Мой бюджет',
+                          maxLines: 1,
+                          style: AppTextStyles.cardTitle.copyWith(
+                            fontSize: 21,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
                         Text(
                           'Распредели монеты с умом!',
                           style: AppTextStyles.bodySmall,
@@ -345,35 +349,31 @@ class _BudgetHeroBanner extends StatelessWidget {
                 ],
               ),
               Positioned(
-                right: compact ? -82 : -98,
+                right: compact ? -82 : (showBubble ? -176 : -98),
                 bottom: -13,
                 child: Image.asset(
                   AppAssets.foxPeekingHappyLevel05,
-                  width: compact ? 82 : 108,
-                  height: compact ? 82 : 108,
+                  width: compact ? 82 : (showBubble ? 96 : 108),
+                  height: compact ? 82 : (showBubble ? 96 : 108),
                   fit: BoxFit.contain,
                 ),
               ),
               if (showBubble)
-                Positioned(
-                  right: -100,
-                  top: -5,
-                  child: Container(
-                    width: 130,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.xs,
-                      vertical: 5,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceTranslucent,
-                      borderRadius: AppRadii.mediumBorder,
-                      border: Border.all(color: AppColors.borderLight),
-                    ),
-                    child: Text(
-                      hint,
-                      textAlign: TextAlign.center,
-                      maxLines: 3,
-                      style: AppTextStyles.caption,
+                const Positioned(
+                  right: -84,
+                  top: -8,
+                  width: 92,
+                  child: SpeechBubble(
+                    text: 'Планируй сегодня — достигай большего завтра!',
+                    tail: SpeechBubbleTail.right,
+                    tilt: -5,
+                    padding: EdgeInsets.fromLTRB(7, 6, 5, 7),
+                    style: TextStyle(
+                      fontFamily: AppTextStyles.fontFamily,
+                      fontSize: 10.5,
+                      height: 1.15,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.secondaryText,
                     ),
                   ),
                 ),
@@ -479,14 +479,23 @@ class _BudgetCategoryCard extends StatelessWidget {
       child: LayoutBuilder(
         builder: (context, constraints) {
           final compact = constraints.maxWidth < 390;
+          final stacked =
+              constraints.maxWidth < 340 ||
+              MediaQuery.textScalerOf(context).scale(1) >= 1.3;
+          final stepper = AmountStepper(
+            value: amount,
+            keyPrefix: keyPrefix,
+            onDecrease: onDecrease,
+            onIncrease: onIncrease,
+          );
           return Column(
             children: [
               Row(
                 children: [
                   Container(
-                    width: compact ? 60 : 72,
-                    height: compact ? 60 : 72,
-                    padding: const EdgeInsets.all(AppSpacing.xs),
+                    width: compact ? 66 : 80,
+                    height: compact ? 66 : 80,
+                    padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
                       color: backgroundColor,
                       borderRadius: AppRadii.mediumBorder,
@@ -508,7 +517,8 @@ class _BudgetCategoryCard extends StatelessWidget {
                           title,
                           maxLines: 2,
                           style: AppTextStyles.cardTitle.copyWith(
-                            fontSize: compact ? 15 : 19,
+                            fontSize: compact ? 16 : 19,
+                            fontWeight: FontWeight.w900,
                           ),
                         ),
                         Text(
@@ -529,15 +539,16 @@ class _BudgetCategoryCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(width: AppSpacing.xs),
-                  AmountStepper(
-                    value: amount,
-                    keyPrefix: keyPrefix,
-                    onDecrease: onDecrease,
-                    onIncrease: onIncrease,
-                  ),
+                  if (!stacked) ...[
+                    const SizedBox(width: AppSpacing.xs),
+                    stepper,
+                  ],
                 ],
               ),
+              if (stacked) ...[
+                const SizedBox(height: AppSpacing.xs),
+                Align(alignment: Alignment.centerRight, child: stepper),
+              ],
               const SizedBox(height: AppSpacing.xs),
               Row(
                 children: [
@@ -592,38 +603,34 @@ class _FoxBudgetHint extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: AppSpacing.xs,
-      ),
-      decoration: const BoxDecoration(
-        color: Color(0xFFE8F8EA),
-        borderRadius: AppRadii.card,
-        boxShadow: AppShadows.card,
-      ),
-      child: Row(
-        children: [
-          Image.asset(
-            AppAssets.foxPeekingHappyLevel05,
-            width: 76,
-            height: 76,
-            fit: BoxFit.contain,
-          ),
-          const SizedBox(width: AppSpacing.xs),
-          Expanded(
-            child: Text(
-              confirmed
-                  ? 'Бюджет готов! Все монеты на своих местах. ❤️'
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Image.asset(
+          AppAssets.foxPeekingHappyLevel05,
+          width: 104,
+          height: 96,
+          fit: BoxFit.contain,
+          alignment: Alignment.bottomCenter,
+        ),
+        const SizedBox(width: AppSpacing.xxs),
+        Flexible(
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 24),
+            child: SpeechBubble(
+              text: confirmed
+                  ? 'Бюджет готов! Все монеты на своих местах!'
                   : complete
-                  ? 'Отлично! Все монеты нашли своё место! ❤️'
+                  ? 'Отлично! Все монеты нашли своё место!'
                   : 'Немного осталось — распредели все монеты.',
-              style: AppTextStyles.body.copyWith(fontSize: 15),
+              tail: SpeechBubbleTail.left,
+              tilt: -3,
+              showHeart: complete || confirmed,
+              style: AppTextStyles.body.copyWith(fontSize: 15, height: 1.25),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

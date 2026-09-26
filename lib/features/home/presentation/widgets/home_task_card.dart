@@ -19,9 +19,9 @@ class HomeTaskCard extends StatelessWidget {
     final action = PrimaryGradientButton(
       label: 'Посмотреть',
       height: 48,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 6),
-      itemSpacing: AppSpacing.xxs,
-      textStyle: AppTextStyles.buttonCompact,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+      itemSpacing: 0,
+      textStyle: AppTextStyles.buttonCompact.copyWith(fontSize: 13.5),
       onPressed: onPressed,
       trailing: const Icon(
         Icons.chevron_right_rounded,
@@ -33,9 +33,25 @@ class HomeTaskCard extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Сегодня новое задание!', style: AppTextStyles.label),
-        const SizedBox(height: AppSpacing.xxs),
-        Text('Узнай, как зарабатывать монеты!', style: AppTextStyles.bodySmall),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(
+            'Сегодня новое задание!',
+            maxLines: 1,
+            style: AppTextStyles.label.copyWith(
+              fontSize: 15,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          'Узнай, как зарабатывать монеты и становиться финансово умнее!',
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: AppTextStyles.caption,
+        ),
       ],
     );
     return RoundedSurfaceCard(
@@ -44,11 +60,11 @@ class HomeTaskCard extends StatelessWidget {
       child: textScale <= 1.2
           ? Row(
               children: [
-                const SizedBox(width: 54, height: 64, child: _TaskPreview()),
+                const SizedBox(width: 62, height: 60, child: _TaskPreview()),
                 const SizedBox(width: AppSpacing.xs),
                 Expanded(child: description),
                 const SizedBox(width: AppSpacing.xs),
-                SizedBox(width: 132, child: action),
+                SizedBox(width: 118, child: action),
               ],
             )
           : Column(

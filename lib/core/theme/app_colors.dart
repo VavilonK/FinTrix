@@ -7,6 +7,7 @@ abstract final class AppColors {
 
   static const Color navy = Color(0xFF08154B);
   static const Color secondaryText = Color(0xFF596797);
+  static const Color navigationInactive = Color(0xFF5D6890);
 
   static const Color purple = Color(0xFF8649F4);
   static const Color purpleDark = Color(0xFF6530D7);
@@ -33,10 +34,18 @@ abstract final class AppColors {
 }
 
 abstract final class AppGradients {
+  /// Glossy vertical CTA fill: light sky blue on top, saturated blue below.
   static const LinearGradient primaryCta = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [Color(0xFF51A8FF), AppColors.primaryBlueDark],
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [Color(0xFF63B6FF), Color(0xFF3B8BF8), Color(0xFF2572EE)],
+    stops: [0, 0.55, 1],
+  );
+
+  static const LinearGradient addButton = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [Color(0xFF6FBBFF), Color(0xFF2F80F4)],
   );
 
   static const LinearGradient levelBadge = LinearGradient(

@@ -48,7 +48,7 @@ class SavingsSummaryChip extends StatelessWidget {
             child: Padding(
               padding: EdgeInsets.only(
                 left: compact ? 6 : AppSpacing.sm,
-                right: compact ? 10 : 12,
+                right: compact ? 6 : 12,
                 top: compact ? AppSpacing.xxs : AppSpacing.xs,
                 bottom: compact ? AppSpacing.xxs : AppSpacing.xs,
               ),
@@ -59,7 +59,7 @@ class SavingsSummaryChip extends StatelessWidget {
                       Icon(
                         Icons.savings_rounded,
                         color: AppColors.pink,
-                        size: compact ? 30 : 32,
+                        size: compact ? 34 : 38,
                       ),
                   SizedBox(width: compact ? AppSpacing.xxs : AppSpacing.xs),
                   Expanded(
@@ -71,7 +71,10 @@ class SavingsSummaryChip extends StatelessWidget {
                           label,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: AppTextStyles.caption,
+                          style: AppTextStyles.caption.copyWith(
+                            fontSize: compact ? 12 : 13,
+                            color: AppColors.navy,
+                          ),
                         ),
                         FittedBox(
                           fit: BoxFit.scaleDown,
@@ -92,7 +95,7 @@ class SavingsSummaryChip extends StatelessWidget {
                     Icon(
                       Icons.chevron_right_rounded,
                       color: AppColors.secondaryText,
-                      size: compact ? 22 : 24,
+                      size: compact ? 20 : 24,
                     ),
                   ],
                 ],

@@ -52,55 +52,67 @@ class PrimaryGradientButton extends StatelessWidget {
         decoration: BoxDecoration(
           color: _isEnabled ? null : AppColors.disabled,
           gradient: _isEnabled ? AppGradients.primaryCta : null,
-          borderRadius: AppRadii.card,
+          borderRadius: AppRadii.capsule,
           boxShadow: _isEnabled ? AppShadows.primaryControl : const [],
         ),
         child: Material(
           color: AppColors.transparent,
-          borderRadius: AppRadii.card,
+          borderRadius: AppRadii.capsule,
           clipBehavior: Clip.antiAlias,
           child: InkWell(
             onTap: _isEnabled ? onPressed : null,
-            borderRadius: AppRadii.card,
-            child: Padding(
-              padding:
-                  contentPadding ??
-                  const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.lg,
-                    vertical: AppSpacing.sm,
-                  ),
-              child: Center(
-                child: isLoading
-                    ? const SizedBox.square(
-                        dimension: AppSpacing.lg,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 3,
-                          color: AppColors.surface,
-                        ),
+            borderRadius: AppRadii.capsule,
+            child: DecoratedBox(
+              // Soft top gloss like the reference buttons.
+              decoration: BoxDecoration(
+                gradient: _isEnabled
+                    ? const LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.center,
+                        colors: [Color(0x40FFFFFF), Color(0x00FFFFFF)],
                       )
-                    : Row(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          if (leading != null) ...[
-                            leading!,
-                            SizedBox(width: itemSpacing),
-                          ],
-                          Flexible(
-                            child: Text(
-                              label,
-                              maxLines: maxLines,
-                              textAlign: TextAlign.center,
-                              overflow: textOverflow,
-                              style: textStyle ?? AppTextStyles.button,
-                            ),
+                    : null,
+              ),
+              child: Padding(
+                padding:
+                    contentPadding ??
+                    const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.lg,
+                      vertical: AppSpacing.sm,
+                    ),
+                child: Center(
+                  child: isLoading
+                      ? const SizedBox.square(
+                          dimension: AppSpacing.lg,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 3,
+                            color: AppColors.surface,
                           ),
-                          if (trailing != null) ...[
-                            SizedBox(width: itemSpacing),
-                            trailing!,
+                        )
+                      : Row(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            if (leading != null) ...[
+                              leading!,
+                              SizedBox(width: itemSpacing),
+                            ],
+                            Flexible(
+                              child: Text(
+                                label,
+                                maxLines: maxLines,
+                                textAlign: TextAlign.center,
+                                overflow: textOverflow,
+                                style: textStyle ?? AppTextStyles.button,
+                              ),
+                            ),
+                            if (trailing != null) ...[
+                              SizedBox(width: itemSpacing),
+                              trailing!,
+                            ],
                           ],
-                        ],
-                      ),
+                        ),
+                ),
               ),
             ),
           ),

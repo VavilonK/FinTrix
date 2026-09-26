@@ -59,8 +59,8 @@ class ProfileScreen extends StatelessWidget {
                 ),
                 savingsLeading: Image.asset(
                   AppAssets.financePiggyBank,
-                  width: 34,
-                  height: 34,
+                  width: 38,
+                  height: 38,
                 ),
                 onSavingsTap: onOpenGoals,
                 trailing: AppSettingsButton(
@@ -125,11 +125,13 @@ class _FoxProfileHero extends StatelessWidget {
           Container(
             height: 230,
             width: double.infinity,
+            clipBehavior: Clip.antiAlias,
             decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFFDBEDFF), Color(0xFFF1E7FF)],
+              // Ryzhik sits in his room, as in the reference art.
+              image: DecorationImage(
+                image: AssetImage(AppAssets.backgroundBedroomDay),
+                fit: BoxFit.cover,
+                alignment: Alignment(0, -0.2),
               ),
               borderRadius: BorderRadius.vertical(
                 top: Radius.circular(AppRadii.extraLarge),
@@ -138,6 +140,18 @@ class _FoxProfileHero extends StatelessWidget {
             child: Stack(
               alignment: Alignment.bottomCenter,
               children: [
+                const Positioned.fill(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [Color(0x1AFFFFFF), Color(0xF2FFFFFF)],
+                        stops: [0.55, 1],
+                      ),
+                    ),
+                  ),
+                ),
                 const Positioned(
                   left: 24,
                   top: 28,
@@ -178,7 +192,13 @@ class _FoxProfileHero extends StatelessWidget {
             ),
             child: Column(
               children: [
-                Text('Рыжик', style: AppTextStyles.heading),
+                Text(
+                  'Рыжик',
+                  style: AppTextStyles.heading.copyWith(
+                    fontSize: 32,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
                 const SizedBox(height: 4),
                 Container(
                   padding: const EdgeInsets.symmetric(
@@ -193,6 +213,7 @@ class _FoxProfileHero extends StatelessWidget {
                     'Уровень ${appState.petLevel}',
                     style: AppTextStyles.body.copyWith(
                       color: AppColors.surface,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
                 ),
@@ -203,9 +224,19 @@ class _FoxProfileHero extends StatelessWidget {
                   semanticLabel: 'Опыт Рыжика',
                 ),
                 const SizedBox(height: 5),
-                Text(
-                  '${appState.petXp % 1000} / 1 000 XP',
-                  style: AppTextStyles.body,
+                Text.rich(
+                  TextSpan(
+                    text: '${appState.petXp % 1000}',
+                    style: AppTextStyles.body.copyWith(
+                      fontWeight: FontWeight.w900,
+                    ),
+                    children: [
+                      TextSpan(
+                        text: ' / 1 000 XP',
+                        style: AppTextStyles.bodySecondary,
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -289,24 +320,41 @@ class _AchievementTile extends StatelessWidget {
         child: Row(
           children: [
             Container(
-              width: 48,
-              height: 48,
+              width: 54,
+              height: 54,
               decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.16),
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    color.withValues(alpha: 0.12),
+                    color.withValues(alpha: 0.24),
+                  ],
+                ),
                 borderRadius: AppRadii.mediumBorder,
               ),
-              child: Icon(icon, color: color, size: 30),
+              child: Icon(icon, color: color, size: 34),
             ),
             const SizedBox(width: AppSpacing.xs),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(value, style: AppTextStyles.cardTitle),
+                  Text(
+                    value,
+                    style: AppTextStyles.cardTitle.copyWith(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w900,
+                      height: 1.1,
+                    ),
+                  ),
                   Text(
                     label,
                     maxLines: 2,
-                    style: AppTextStyles.caption.copyWith(fontSize: 12),
+                    style: AppTextStyles.caption.copyWith(
+                      fontSize: 13,
+                      color: AppColors.navy,
+                    ),
                   ),
                 ],
               ),
@@ -355,7 +403,9 @@ class _GrowthCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     'Как растёт Рыжик',
-                    style: AppTextStyles.cardTitle,
+                    style: AppTextStyles.cardTitle.copyWith(
+                      fontWeight: FontWeight.w900,
+                    ),
                   ),
                 ),
                 Text(
@@ -403,11 +453,8 @@ class _GrowthCard extends StatelessWidget {
                   for (final item in PetGrowthStage.values) ...[
                     _GrowthIcon(
                       key: ValueKey('growth_icon_${item.name}'),
-                      color: switch (item) {
-                        PetGrowthStage.little => AppColors.green,
-                        PetGrowthStage.growing => AppColors.primaryBlue,
-                        PetGrowthStage.grown => AppColors.purple,
-                      },
+                      stage: item,
+                      locked: item.index > stage.index,
                     ),
                     if (item != PetGrowthStage.grown)
                       const Icon(
@@ -483,22 +530,42 @@ class _StageStatus extends StatelessWidget {
 }
 
 class _GrowthIcon extends StatelessWidget {
-  const _GrowthIcon({required this.color, super.key});
+  const _GrowthIcon({required this.stage, required this.locked, super.key});
 
-  final Color color;
+  final PetGrowthStage stage;
+
+  /// Not reached yet: shown as a soft silhouette, as in the reference art.
+  final bool locked;
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Container(
-        width: 66,
-        height: 66,
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.14),
-          shape: BoxShape.circle,
+    // Only the level 5 artwork exists yet; younger stages are drawn smaller.
+    final size = switch (stage) {
+      PetGrowthStage.little => 58.0,
+      PetGrowthStage.growing => 70.0,
+      PetGrowthStage.grown => 80.0,
+    };
+    final image = SizedBox.square(
+      dimension: 80,
+      child: Center(
+        child: Image.asset(
+          AppAssets.foxSittingHappyLevel05,
+          width: size,
+          height: size,
+          fit: BoxFit.contain,
         ),
-        child: Icon(Icons.pets_rounded, color: color, size: 36),
       ),
+    );
+    return Center(
+      child: locked
+          ? ColorFiltered(
+              colorFilter: const ColorFilter.mode(
+                Color(0xFFCBD2EE),
+                BlendMode.srcIn,
+              ),
+              child: image,
+            )
+          : image,
     );
   }
 }

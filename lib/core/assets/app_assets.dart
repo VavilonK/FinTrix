@@ -7,6 +7,8 @@ abstract final class AppAssets {
   // in assets/animations/fox/source/ by tool/animations/convert_fox_animations.py.
   static const String foxHappyIdle =
       'assets/animations/fox/runtime/fox_happy_idle.webp';
+  static const String foxHungryIdle =
+      'assets/animations/fox/runtime/fox_hungry_idle.webp';
   static const String foxPetHappy =
       'assets/animations/fox/runtime/fox_pet_happy.webp';
   static const String foxPetHungry =

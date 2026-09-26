@@ -295,6 +295,8 @@ void main() {
     final valueAfterDrag = tester.widget<Slider>(sliderFinder).value;
     expect(valueAfterDrag, greaterThan(valueBeforeDrag));
 
+    await tester.ensureVisible(find.byKey(const ValueKey('goal_preset_300')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('goal_preset_300')));
     final saveConfirm = find.byKey(const ValueKey('goal_save_confirm'));
     await tester.ensureVisible(saveConfirm);
@@ -427,6 +429,8 @@ void main() {
 
     expect(find.text('По плану: 400 монет'), findsOneWidget);
     expect(find.text('По плану — 400'), findsOneWidget);
+    await tester.ensureVisible(find.byKey(const ValueKey('goal_preset_500')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('goal_preset_500')));
     final saveConfirm = find.byKey(const ValueKey('goal_save_confirm'));
     await tester.ensureVisible(saveConfirm);
@@ -551,10 +555,12 @@ void main() {
     expect(find.text('Чем угостим Рыжика?'), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('feed_basic')));
     await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('feed_confirm')));
+    await tester.pumpAndSettle();
     expect(state.balance, balanceBefore - 20);
     expect(state.budgetUsage.essentialsSpent, 20);
     // Pet taps are ignored while the feeding clip plays; let it end.
-    await tester.pump(const Duration(seconds: 10));
+    await tester.pump(const Duration(seconds: 15));
 
     final careBefore = state.petState.care;
     await tester.tap(find.byKey(const ValueKey('home_pet_fox')));
@@ -683,6 +689,8 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('feed_treat')));
     await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('feed_confirm')));
+    await tester.pumpAndSettle();
     expect(find.textContaining('Сейчас монет не хватает'), findsOneWidget);
     expect(state.balance, 0);
 
@@ -713,6 +721,8 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('home_feed_pet')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('feed_treat')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('feed_confirm')));
     await tester.pumpAndSettle();
     expect(find.textContaining('Всё равно купить?'), findsOneWidget);
     expect(state.balance, balanceBefore);

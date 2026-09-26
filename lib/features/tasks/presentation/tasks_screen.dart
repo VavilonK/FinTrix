@@ -127,8 +127,8 @@ class TasksScreen extends StatelessWidget {
                           ),
                           savingsLeading: Image.asset(
                             AppAssets.financePiggyBank,
-                            width: 34,
-                            height: 34,
+                            width: 38,
+                            height: 38,
                             fit: BoxFit.contain,
                           ),
                           onAddBalance: () => showQuickActionsSheet(

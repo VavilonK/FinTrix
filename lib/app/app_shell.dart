@@ -20,27 +20,27 @@ class _AppShellState extends State<AppShell> {
   static const List<AppBottomNavigationItem> _navigationItems = [
     AppBottomNavigationItem(
       label: 'Главная',
-      icon: Icon(Icons.home_outlined),
+      icon: Icon(Icons.home_rounded),
       selectedIcon: Icon(Icons.home_rounded),
     ),
     AppBottomNavigationItem(
       label: 'Задания',
-      icon: Icon(Icons.location_on_outlined),
+      icon: Icon(Icons.location_on_rounded),
       selectedIcon: Icon(Icons.location_on_rounded),
     ),
     AppBottomNavigationItem(
       label: 'Бюджет',
-      icon: Icon(Icons.account_balance_wallet_outlined),
+      icon: Icon(Icons.account_balance_wallet_rounded),
       selectedIcon: Icon(Icons.account_balance_wallet_rounded),
     ),
     AppBottomNavigationItem(
       label: 'Цели',
-      icon: Icon(Icons.star_outline_rounded),
+      icon: Icon(Icons.star_rounded),
       selectedIcon: Icon(Icons.star_rounded),
     ),
     AppBottomNavigationItem(
       label: 'Профиль',
-      icon: Icon(Icons.pets_outlined),
+      icon: Icon(Icons.pets_rounded),
       selectedIcon: Icon(Icons.pets_rounded),
     ),
   ];

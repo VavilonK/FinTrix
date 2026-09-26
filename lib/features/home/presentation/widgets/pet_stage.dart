@@ -6,6 +6,7 @@ import '../../../../core/theme/app_shadows.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_progress_bar.dart';
+import '../../../../core/widgets/speech_bubble.dart';
 import '../pet_animation/pet_animation_coordinator.dart';
 import '../pet_animation/pet_animation_viewport.dart';
 
@@ -42,8 +43,8 @@ class PetStage extends StatelessWidget {
               .clamp(18.0, 28.0)
               .toDouble();
           final meterWidth =
-              (constraints.maxWidth * (textScale >= 1.5 ? 0.6 : 0.43))
-                  .clamp(150.0, textScale >= 1.5 ? 225.0 : 175.0)
+              (constraints.maxWidth * (textScale >= 1.5 ? 0.6 : 0.33))
+                  .clamp(124.0, textScale >= 1.5 ? 225.0 : 150.0)
                   .toDouble();
 
           return Stack(
@@ -61,23 +62,16 @@ class PetStage extends StatelessWidget {
                 ),
               ),
               Positioned(
-                top: 0,
-                right: -4,
-                child: Container(
-                  width: meterWidth,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.xs,
-                    vertical: 6,
+                top: 4,
+                right: 0,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: (constraints.maxWidth * 0.4).clamp(140, 200),
                   ),
-                  decoration: const BoxDecoration(
-                    color: AppColors.surfaceTranslucent,
-                    borderRadius: AppRadii.card,
-                    boxShadow: AppShadows.card,
-                  ),
-                  child: Text(
-                    message,
-                    textAlign: TextAlign.center,
-                    style: AppTextStyles.caption,
+                  child: SpeechBubble(
+                    key: const ValueKey('pet_speech_bubble'),
+                    text: message,
+                    tilt: -6,
                   ),
                 ),
               ),
@@ -135,7 +129,7 @@ class _PetStatusMeter extends StatelessWidget {
   Widget build(BuildContext context) {
     final textScale = MediaQuery.textScalerOf(context).scale(1);
     return SizedBox(
-      height: textScale >= 1.5 ? 58 : 37 + (textScale - 1) * 28,
+      height: textScale >= 1.5 ? 58 : 34 + (textScale - 1) * 28,
       child: DecoratedBox(
         decoration: const BoxDecoration(
           color: AppColors.surfaceTranslucent,
@@ -147,8 +141,8 @@ class _PetStatusMeter extends StatelessWidget {
           child: Row(
             children: [
               Container(
-                width: 30,
-                height: 30,
+                width: 28,
+                height: 28,
                 decoration: BoxDecoration(
                   color: color,
                   shape: BoxShape.circle,
@@ -162,11 +156,19 @@ class _PetStatusMeter extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(label, maxLines: 1, style: AppTextStyles.caption),
+                    Text(
+                      label,
+                      maxLines: 1,
+                      style: AppTextStyles.caption.copyWith(
+                        fontSize: 12,
+                        color: AppColors.navy,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                     const SizedBox(height: 2),
                     AppProgressBar(
                       value: value,
-                      height: 8,
+                      height: 7,
                       foregroundColor: color,
                       animationDuration: Duration.zero,
                       semanticLabel: label,

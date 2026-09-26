@@ -25,7 +25,7 @@ class AmountStepper extends StatelessWidget {
       constraints: const BoxConstraints(minHeight: 56),
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.surfaceSoft,
         borderRadius: AppRadii.capsule,
         border: Border.all(color: AppColors.borderLight),
         boxShadow: AppShadows.card,
@@ -48,7 +48,11 @@ class AmountStepper extends StatelessWidget {
                   '$value',
                   key: ValueKey('${keyPrefix}_value'),
                   maxLines: 1,
-                  style: AppTextStyles.cardTitle.copyWith(fontSize: 22),
+                  style: AppTextStyles.cardTitle.copyWith(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                    height: 1.1,
+                  ),
                 ),
                 Text(
                   'монет',
@@ -88,26 +92,36 @@ class _StepperButton extends StatelessWidget {
       button: true,
       enabled: enabled,
       label: isPrimary ? 'Увеличить сумму' : 'Уменьшить сумму',
-      child: SizedBox.square(
-        dimension: 48,
-        child: Material(
-          color: !enabled
-              ? AppColors.track
-              : isPrimary
-              ? AppColors.primaryBlue
-              : AppColors.backgroundLavender,
-          borderRadius: AppRadii.capsule,
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: AppRadii.capsule,
-            child: Icon(
-              icon,
-              color: !enabled
-                  ? AppColors.disabled
-                  : isPrimary
-                  ? AppColors.surface
-                  : AppColors.primaryBlue,
-              size: 26,
+      child: InkWell(
+        onTap: onTap,
+        customBorder: const CircleBorder(),
+        child: SizedBox.square(
+          dimension: 48,
+          child: Center(
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: !enabled
+                    ? AppColors.track
+                    : isPrimary
+                    ? null
+                    : const Color(0xFFE3E7F8),
+                gradient: enabled && isPrimary ? AppGradients.addButton : null,
+                shape: BoxShape.circle,
+                boxShadow: enabled && isPrimary
+                    ? AppShadows.primaryControl
+                    : null,
+              ),
+              child: Icon(
+                icon,
+                color: !enabled
+                    ? AppColors.disabled
+                    : isPrimary
+                    ? AppColors.surface
+                    : AppColors.secondaryText,
+                size: 24,
+              ),
             ),
           ),
         ),

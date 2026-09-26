@@ -42,12 +42,14 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('home_feed_pet')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(ValueKey('feed_${food.name}')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('feed_confirm')));
     await tester.pump();
   }
 
   /// Lets any action clip time out (clips never decode in fake async).
   Future<void> settleClips(WidgetTester tester) async {
-    await tester.pump(const Duration(seconds: 10));
+    await tester.pump(const Duration(seconds: 15));
     await tester.pumpAndSettle();
   }
 

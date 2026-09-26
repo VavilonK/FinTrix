@@ -70,17 +70,19 @@ abstract final class PetAnimationCatalog {
       loops: true,
       startState: _happy,
       endState: _happy,
-      // Frames 0-21 stay within codec noise of frame 0; later frames tilt the head.
-      anchorWindow: Duration(milliseconds: 733),
+      // The first ~42 frames (60 fps) stay within codec noise of frame 0;
+      // later frames tilt the head.
+      anchorWindow: Duration(milliseconds: 700),
     ),
-    // No looping hungry idle was delivered: the hungry anchor frame is used.
     PetAnimationState.hungryIdle: PetAnimationDefinition(
-      asset: AppAssets.foxHungryStill,
+      asset: AppAssets.foxHungryIdle,
       stillAsset: AppAssets.foxHungryStill,
-      duration: Duration.zero,
+      duration: Duration(milliseconds: 5000),
       loops: true,
       startState: _hungry,
       endState: _hungry,
+      // The head starts drooping right away; only the first two frames match.
+      anchorWindow: Duration(milliseconds: 33),
     ),
     PetAnimationState.petHappy: PetAnimationDefinition(
       asset: AppAssets.foxPetHappy,

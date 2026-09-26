@@ -53,7 +53,7 @@ class CurrencyBalanceChip extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 SizedBox.square(
-                  dimension: compact ? 24 : 32,
+                  dimension: compact ? 28 : 36,
                   child: FittedBox(
                     fit: BoxFit.contain,
                     child:
@@ -80,7 +80,7 @@ class CurrencyBalanceChip extends StatelessWidget {
                   ),
                 ),
                 if (onAdd != null) ...[
-                  SizedBox(width: compact ? 2 : AppSpacing.xs),
+                  SizedBox(width: compact ? 0 : AppSpacing.xs),
                   _AddButton(onPressed: onAdd!, compact: compact),
                 ],
               ],
@@ -110,13 +110,18 @@ class _AddButton extends StatelessWidget {
           dimension: AppSpacing.minimumTouchTarget,
           child: Center(
             child: SizedBox.square(
-              dimension: compact ? 34 : 40,
+              dimension: compact ? 26 : 30,
               child: const DecoratedBox(
                 decoration: BoxDecoration(
-                  gradient: AppGradients.primaryCta,
+                  gradient: AppGradients.addButton,
                   shape: BoxShape.circle,
+                  boxShadow: AppShadows.primaryControl,
                 ),
-                child: Icon(Icons.add_rounded, color: AppColors.surface),
+                child: Icon(
+                  Icons.add_rounded,
+                  color: AppColors.surface,
+                  size: 20,
+                ),
               ),
             ),
           ),

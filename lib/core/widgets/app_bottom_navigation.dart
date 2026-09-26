@@ -45,7 +45,7 @@ class AppBottomNavigation extends StatelessWidget {
         child: LayoutBuilder(
           builder: (context, constraints) {
             final itemWidth = constraints.maxWidth / items.length;
-            final iconSize = (itemWidth * 0.32).clamp(22, 27).toDouble();
+            final iconSize = (itemWidth * 0.36).clamp(24, 31).toDouble();
             final enlargedText =
                 MediaQuery.textScalerOf(context).scale(1) >= 1.5;
 
@@ -56,7 +56,7 @@ class AppBottomNavigation extends StatelessWidget {
                 final selected = index == currentIndex;
                 final color = selected
                     ? AppColors.primaryBlue
-                    : AppColors.secondaryText;
+                    : AppColors.navigationInactive;
 
                 return Expanded(
                   child: Semantics(

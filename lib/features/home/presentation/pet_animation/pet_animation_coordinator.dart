@@ -18,10 +18,11 @@ class PetAnimationCoordinator extends ChangeNotifier {
 
   /// Extra time for the idle to reach its anchor and the first frame to decode
   /// before a started action is abandoned.
-  static const startTimeout = Duration(seconds: 3);
+  static const startTimeout = Duration(seconds: 8);
 
-  /// Tolerance after the clip's own duration before it is treated as finished.
-  static const endGrace = Duration(milliseconds: 600);
+  /// Safety net only: the viewport reports the real last frame. Slow devices
+  /// decode 60 fps clips below real time, so the net must not cut them short.
+  static const endTimeoutFactor = 3;
 
   PetBaseState _baseState;
   bool _animationsEnabled;
@@ -87,7 +88,7 @@ class PetAnimationCoordinator extends ChangeNotifier {
   /// The viewport shows the first frame of [playId]; arms the end watchdog.
   void actionStarted(int playId) {
     if (playId != _playId || !isActionPlaying) return;
-    _arm(currentDefinition.duration + endGrace);
+    _arm(currentDefinition.duration * endTimeoutFactor);
   }
 
   /// The viewport finished the last frame of [playId].
