@@ -83,12 +83,12 @@ class _PetActionButton extends StatelessWidget {
     // The artwork sits above the button and overlaps its top edge; the
     // overhang is reserved so the Home layout keeps its previous height.
     final iconSize = textScale >= 1.8
-        ? 46.0
+        ? 56.0
         : textScale >= 1.3
-        ? 52.0
-        : 60.0;
-    final overhang = iconSize * 0.4;
-    final buttonHeight = 78.0 + (textScale - 1).clamp(0.0, 1.0) * 70;
+        ? 64.0
+        : 76.0;
+    final overhang = iconSize * 0.42;
+    final buttonHeight = 80.0 + (textScale - 1).clamp(0.0, 1.0) * 70;
 
     return Semantics(
       button: true,
@@ -125,6 +125,10 @@ class _PetActionButton extends StatelessWidget {
                   child: InkWell(
                     onTap: onTap,
                     borderRadius: AppRadii.actionButton,
+                    // Light feedback: the default dark ink reads as a black
+                    // flash over the saturated button and its label.
+                    splashColor: AppColors.surface.withAlpha(70),
+                    highlightColor: AppColors.surface.withAlpha(40),
                     child: DecoratedBox(
                       decoration: const BoxDecoration(
                         gradient: LinearGradient(
@@ -136,7 +140,7 @@ class _PetActionButton extends StatelessWidget {
                       child: Padding(
                         padding: EdgeInsets.fromLTRB(
                           AppSpacing.xxs,
-                          iconSize * 0.62,
+                          iconSize - overhang,
                           AppSpacing.xxs,
                           AppSpacing.xs,
                         ),
@@ -151,10 +155,10 @@ class _PetActionButton extends StatelessWidget {
                                 fontSize: 17,
                                 fontWeight: FontWeight.w900,
                                 shadows: [
+                                  // No blur: a blurred text shadow flashed a black box on repaint.
                                   Shadow(
-                                    color: shade.withAlpha(140),
+                                    color: shade.withAlpha(150),
                                     offset: const Offset(0, 1.5),
-                                    blurRadius: 3,
                                   ),
                                 ],
                               ),

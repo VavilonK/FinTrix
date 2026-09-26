@@ -104,10 +104,14 @@ class _BubblePainter extends CustomPainter {
     final radius = math.min(22.0, body.shortestSide / 2);
     final bodyPath = Path()
       ..addRRect(RRect.fromRectAndRadius(body, Radius.circular(radius)));
+    // Each tail starts inside the body, so the rounded corner leaves no gap
+    // through which the character behind could show.
+    final inset = radius * 0.7;
     final tailPath = switch (tail) {
       SpeechBubbleTail.bottomLeft =>
         Path()
-          ..moveTo(body.left + radius * 0.9, body.bottom - 2)
+          ..moveTo(body.left + radius * 0.5, body.bottom - inset)
+          ..lineTo(body.left + radius * 0.9, body.bottom - 1)
           ..quadraticBezierTo(
             body.left + radius * 0.5,
             size.height,
@@ -118,12 +122,14 @@ class _BubblePainter extends CustomPainter {
             body.left + radius * 0.9,
             body.bottom + t * 0.2,
             body.left + radius * 1.9,
-            body.bottom - 2,
+            body.bottom - 1,
           )
+          ..lineTo(body.left + radius * 1.9, body.bottom - inset)
           ..close(),
       SpeechBubbleTail.bottomRight =>
         Path()
-          ..moveTo(body.right - radius * 0.9, body.bottom - 2)
+          ..moveTo(body.right - radius * 0.5, body.bottom - inset)
+          ..lineTo(body.right - radius * 0.9, body.bottom - 1)
           ..quadraticBezierTo(
             body.right - radius * 0.5,
             size.height,
@@ -134,25 +140,27 @@ class _BubblePainter extends CustomPainter {
             body.right - radius * 0.9,
             body.bottom + t * 0.2,
             body.right - radius * 1.9,
-            body.bottom - 2,
+            body.bottom - 1,
           )
+          ..lineTo(body.right - radius * 1.9, body.bottom - inset)
           ..close(),
       SpeechBubbleTail.left =>
         Path()
-          ..moveTo(body.left + 2, body.center.dy - 8)
+          ..moveTo(body.left + 8, body.center.dy - 8)
           ..lineTo(0, body.center.dy + 6)
-          ..lineTo(body.left + 2, body.center.dy + 6)
+          ..lineTo(body.left + 8, body.center.dy + 6)
           ..close(),
       SpeechBubbleTail.right =>
         Path()
-          ..moveTo(body.right - 2, body.center.dy - 8)
+          ..moveTo(body.right - 8, body.center.dy - 8)
           ..lineTo(size.width, body.center.dy + 6)
-          ..lineTo(body.right - 2, body.center.dy + 6)
+          ..lineTo(body.right - 8, body.center.dy + 6)
           ..close(),
     };
     final path = Path.combine(PathOperation.union, bodyPath, tailPath);
     canvas.drawShadow(path, const Color(0x551C326F), 4, false);
-    canvas.drawPath(path, Paint()..color = AppColors.surfaceTranslucent);
+    // Opaque, so the character behind never shows through.
+    canvas.drawPath(path, Paint()..color = AppColors.surface);
   }
 
   @override
