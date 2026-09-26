@@ -6,7 +6,8 @@ import '../../../../core/theme/app_shadows.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_progress_bar.dart';
-import 'animated_pet.dart';
+import '../pet_animation/pet_animation_coordinator.dart';
+import '../pet_animation/pet_animation_viewport.dart';
 
 class PetStage extends StatelessWidget {
   const PetStage({
@@ -16,10 +17,8 @@ class PetStage extends StatelessWidget {
     required this.care,
     required this.foxAsset,
     required this.message,
-    this.showHearts = false,
+    required this.animation,
     this.isActive = true,
-    this.animateIdle = true,
-    this.pettingSequence = 0,
     super.key,
   });
 
@@ -29,10 +28,8 @@ class PetStage extends StatelessWidget {
   final int care;
   final String foxAsset;
   final String message;
-  final bool showHearts;
+  final PetAnimationCoordinator animation;
   final bool isActive;
-  final bool animateIdle;
-  final int pettingSequence;
 
   @override
   Widget build(BuildContext context) {
@@ -57,13 +54,12 @@ class PetStage extends StatelessWidget {
                 right: -foxOverflow,
                 top: -32,
                 bottom: -4,
-                child: AnimatedPet(
+                child: PetAnimationViewport(
+                  coordinator: animation,
                   fallbackAsset: foxAsset,
                   isActive: isActive,
-                  animationsEnabled: animateIdle,
                 ),
               ),
-              if (showHearts) _FloatingHearts(key: ValueKey(pettingSequence)),
               Positioned(
                 top: 0,
                 right: -4,
@@ -117,42 +113,6 @@ class PetStage extends StatelessWidget {
             ],
           );
         },
-      ),
-    );
-  }
-}
-
-class _FloatingHearts extends StatelessWidget {
-  const _FloatingHearts({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Positioned.fill(
-      child: IgnorePointer(
-        child: TweenAnimationBuilder<double>(
-          tween: Tween(begin: 0, end: 1),
-          duration: const Duration(milliseconds: 1100),
-          curve: Curves.easeOut,
-          builder: (context, value, child) {
-            return Stack(
-              children: [
-                _heart(0.37, 0.46 - value * 0.28, 28, value),
-                _heart(0.58, 0.38 - value * 0.24, 34, value),
-                _heart(0.68, 0.56 - value * 0.34, 24, value),
-              ],
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _heart(double x, double y, double size, double progress) {
-    return Align(
-      alignment: Alignment(x * 2 - 1, y * 2 - 1),
-      child: Opacity(
-        opacity: (1 - progress * 0.65).clamp(0, 1),
-        child: Icon(Icons.favorite_rounded, color: AppColors.pink, size: size),
       ),
     );
   }

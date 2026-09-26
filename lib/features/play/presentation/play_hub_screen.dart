@@ -19,7 +19,7 @@ class PlayHubScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = AppScope.of(context);
-    final hungry = state.petState.satiety < 30;
+    final hungry = state.petState.isHungry;
 
     return Scaffold(
       backgroundColor: AppColors.backgroundLavender,

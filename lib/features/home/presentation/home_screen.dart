@@ -8,6 +8,8 @@ import '../../../core/widgets/account_header.dart';
 import '../../../core/widgets/app_settings_button.dart';
 import '../../play/presentation/play_hub_screen.dart';
 import '../../pet_progression/presentation/pet_visual_resolver.dart';
+import 'pet_animation/pet_animation_coordinator.dart';
+import 'pet_animation/pet_animation_models.dart';
 import 'widgets/home_goal_card.dart';
 import 'widgets/home_sheets.dart';
 import 'widgets/home_task_card.dart';
@@ -32,20 +34,58 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   bool _isPetting = false;
   int _pettingSequence = 0;
+  PetAnimationCoordinator? _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Runs whenever AppScope notifies: satiety decay, feeding, restore,
+    // period end or a reset all flow into the visual base state from here.
+    final base = PetBaseState.of(AppScope.of(context).petState);
+    final animationsEnabled = !MediaQuery.disableAnimationsOf(context);
+    final animation = _animation ??= PetAnimationCoordinator(
+      baseState: base,
+      animationsEnabled: animationsEnabled,
+    );
+    animation.syncBaseState(base);
+    animation.setAnimationsEnabled(animationsEnabled);
+  }
+
+  @override
+  void didUpdateWidget(HomeScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!widget.isActive) _animation?.interrupt();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) _animation?.interrupt();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _animation?.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final appState = AppScope.of(context);
     final pet = appState.petState;
-    final hungry = pet.satiety < 30;
+    final hungry = pet.isHungry;
     final foxAsset = PetVisualResolver.assetFor(
       stage: appState.petGrowthStage,
-      emotionalState: _isPetting
-          ? PetEmotionalState.loved
-          : hungry
+      emotionalState: hungry
           ? PetEmotionalState.hungry
           : PetEmotionalState.happy,
       context: PetVisualContext.home,
@@ -163,21 +203,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     PetStage(
                       height: stageHeight,
                       isActive: widget.isActive,
-                      animateIdle: !hungry && !_isPetting,
-                      pettingSequence: _pettingSequence,
+                      animation: _animation!,
                       mood: pet.mood,
                       satiety: pet.satiety,
                       care: pet.care,
                       foxAsset: foxAsset,
                       message: message,
-                      showHearts: _isPetting,
                     ),
                     const SizedBox(height: AppSpacing.xxs),
                     PetActions(
-                      onFeed: () => showFeedPetSheet(
-                        context: context,
-                        onOpenTasks: widget.onOpenTasks,
-                      ),
+                      onFeed: _feedFox,
                       onPlay: _openPlayHub,
                       onPet: _petFox,
                     ),
@@ -216,8 +251,26 @@ class _HomeScreenState extends State<HomeScreen> {
         .push(MaterialPageRoute<void>(builder: (_) => const PlayHubScreen()));
   }
 
+  Future<void> _feedFox() async {
+    // One pet action at a time: a tap during a clip is ignored, not queued.
+    if (_animation!.isActionPlaying) return;
+    final food = await showFeedPetSheet(
+      context: context,
+      onOpenTasks: widget.onOpenTasks,
+    );
+    if (food == null || !mounted) return;
+    // Coins and satiety already changed inside AppController.feedPet; the
+    // clip only presents that result, starting from the pose on screen.
+    _animation!.playFeed(
+      food,
+      after: PetBaseState.of(AppScope.of(context).petState),
+    );
+  }
+
   Future<void> _petFox() async {
+    if (_animation!.isActionPlaying) return;
     AppScope.of(context).petFox();
+    _animation!.playPet();
     setState(() {
       _isPetting = true;
       _pettingSequence += 1;

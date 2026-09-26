@@ -25,6 +25,11 @@ class PetState {
   final DateTime? lastPlayedAt;
   final DateTime? lastPettedAt;
 
+  /// Satiety below this value makes Ryzhik hungry.
+  static const int hungrySatietyThreshold = 30;
+
+  bool get isHungry => satiety < hungrySatietyThreshold;
+
   PetState copyWith({
     int? mood,
     int? satiety,

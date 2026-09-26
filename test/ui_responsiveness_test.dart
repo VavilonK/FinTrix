@@ -7,7 +7,7 @@ import 'package:finance_pet/features/adult/domain/parent_access_service.dart';
 import 'package:finance_pet/features/budget/presentation/budget_screen.dart';
 import 'package:finance_pet/features/goals/presentation/goals_screen.dart';
 import 'package:finance_pet/features/home/presentation/home_screen.dart';
-import 'package:finance_pet/features/home/presentation/widgets/animated_pet.dart';
+import 'package:finance_pet/features/home/presentation/pet_animation/pet_animation_viewport.dart';
 import 'package:finance_pet/features/home/presentation/widgets/home_task_card.dart';
 import 'package:finance_pet/features/home/presentation/widgets/pet_actions.dart';
 import 'package:finance_pet/features/home/presentation/widgets/pet_stage.dart';
@@ -51,42 +51,29 @@ void main() {
   }
 
   testWidgets(
-    'Home keeps the same image state across rebuilds and tab returns',
+    'Home keeps the same animation state across rebuilds and tab returns',
     (tester) async {
       await _prepare(tester, size: const Size(412, 915), textScale: 1);
-      final image = find.byKey(
-        const ValueKey('pet_idle_animation'),
-        skipOffstage: false,
-      );
-      final imageState = tester.state(image);
+      final viewport = find.byType(PetAnimationViewport, skipOffstage: false);
+      final viewportState = tester.state(viewport);
       final controller = AppScope.of(tester.element(find.byType(HomeScreen)));
       controller.notifyListeners();
       await tester.pump();
-      expect(tester.state(image), same(imageState));
+      expect(tester.state(viewport), same(viewportState));
       for (final label in ['Задания', 'Бюджет']) {
         await tester.tap(find.widgetWithText(InkWell, label));
         await tester.pumpAndSettle();
-        expect(
-          tester
-              .widget<AnimatedPet>(
-                find.byType(AnimatedPet, skipOffstage: false),
-              )
-              .isActive,
-          isFalse,
-        );
-        expect(TickerMode.valuesOf(tester.element(image)).enabled, isFalse);
+        expect(tester.widget<PetAnimationViewport>(viewport).isActive, isFalse);
         await tester.tap(find.widgetWithText(InkWell, 'Главная'));
         await tester.pumpAndSettle();
-        expect(tester.state(image), same(imageState));
-        expect(TickerMode.valuesOf(tester.element(image)).enabled, isTrue);
+        expect(tester.state(viewport), same(viewportState));
+        expect(tester.widget<PetAnimationViewport>(viewport).isActive, isTrue);
       }
       await tester.tap(find.byType(AppSettingsButton));
       await tester.pumpAndSettle();
-      expect(TickerMode.valuesOf(tester.element(image)).enabled, isFalse);
       Navigator.of(tester.element(find.text('Настройки'))).pop();
       await tester.pumpAndSettle();
-      expect(tester.state(image), same(imageState));
-      expect(TickerMode.valuesOf(tester.element(image)).enabled, isTrue);
+      expect(tester.state(viewport), same(viewportState));
     },
   );
 

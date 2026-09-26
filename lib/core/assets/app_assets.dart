@@ -3,8 +3,31 @@
 /// Asset files are added separately as they are produced. This class must stay
 /// aligned with the asset directories declared in `pubspec.yaml`.
 abstract final class AppAssets {
-  static const String ryzhikIdleAnimation =
-      'assets/animations/fox/ryzhik_idle.webp';
+  // Home fox animations: runtime Animated WebP converted from the WebM masters
+  // in assets/animations/fox/source/ by tool/animations/convert_fox_animations.py.
+  static const String foxHappyIdle =
+      'assets/animations/fox/runtime/fox_happy_idle.webp';
+  static const String foxPetHappy =
+      'assets/animations/fox/runtime/fox_pet_happy.webp';
+  static const String foxPetHungry =
+      'assets/animations/fox/runtime/fox_pet_hungry.webp';
+  static const String foxFeedHappyBasic =
+      'assets/animations/fox/runtime/fox_feed_happy_basic.webp';
+  static const String foxFeedHappyHealthy =
+      'assets/animations/fox/runtime/fox_feed_happy_healthy.webp';
+  static const String foxFeedHappyTreat =
+      'assets/animations/fox/runtime/fox_feed_happy_treat.webp';
+  static const String foxFeedHungryBasic =
+      'assets/animations/fox/runtime/fox_feed_hungry_basic.webp';
+  static const String foxFeedHungryHealthy =
+      'assets/animations/fox/runtime/fox_feed_hungry_healthy.webp';
+  static const String foxFeedHungryTreat =
+      'assets/animations/fox/runtime/fox_feed_hungry_treat.webp';
+  // Anchor frames: happy/hungry idle pose for reduce motion and first paint.
+  static const String foxHappyStill =
+      'assets/animations/fox/runtime/fox_happy_still.webp';
+  static const String foxHungryStill =
+      'assets/animations/fox/runtime/fox_hungry_still.webp';
 
   // Canonical Fox
   static const String foxSittingHappyLevel05 =

@@ -59,14 +59,20 @@ class _AppShellState extends State<AppShell> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (!_petPrecached && !MediaQuery.disableAnimationsOf(context)) {
+    if (!_petPrecached) {
       _petPrecached = true;
-      // Warm the first frame without delaying startup. AnimatedPet handles errors.
-      precacheImage(
-        const AssetImage(AppAssets.ryzhikIdleAnimation),
-        context,
-        onError: (error, stackTrace) {},
-      );
+      // Home paints the anchor frame until its first clip frame is decoded,
+      // and permanently under reduce motion, so both must be ready at once.
+      for (final still in const [
+        AppAssets.foxHappyStill,
+        AppAssets.foxHungryStill,
+      ]) {
+        precacheImage(
+          AssetImage(still),
+          context,
+          onError: (error, stackTrace) {},
+        );
+      }
     }
   }
 

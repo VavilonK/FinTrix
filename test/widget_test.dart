@@ -553,6 +553,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(state.balance, balanceBefore - 20);
     expect(state.budgetUsage.essentialsSpent, 20);
+    // Pet taps are ignored while the feeding clip plays; let it end.
+    await tester.pump(const Duration(seconds: 10));
 
     final careBefore = state.petState.care;
     await tester.tap(find.byKey(const ValueKey('home_pet_fox')));

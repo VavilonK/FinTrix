@@ -291,11 +291,12 @@ Future<void> _confirmRestartDemo({
       .showSnackBar(const SnackBar(content: Text('Демо начато с первого дня')));
 }
 
-Future<void> showFeedPetSheet({
+/// Resolves to the food that was bought and fed, or null if nothing was.
+Future<FoodType?> showFeedPetSheet({
   required BuildContext context,
   required VoidCallback onOpenTasks,
 }) {
-  return showAppModalSheet<void>(
+  return showAppModalSheet<FoodType>(
     context: context,
     builder: (sheetContext) => _FeedPetSheet(
       onOpenTasks: () => _closeAndRun(sheetContext, onOpenTasks),
@@ -428,7 +429,7 @@ class _FeedPetSheetState extends State<_FeedPetSheet> {
       });
       return;
     }
-    Navigator.of(context).pop();
+    Navigator.of(context).pop(food);
     ScaffoldMessenger.of(context)
         .showSnackBar(const SnackBar(content: Text('Рыжик сыт и доволен!')));
   }
