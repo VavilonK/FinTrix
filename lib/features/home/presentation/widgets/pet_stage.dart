@@ -20,6 +20,7 @@ class PetStage extends StatelessWidget {
     required this.message,
     required this.animation,
     this.isActive = true,
+    this.headroom = 12,
     super.key,
   });
 
@@ -31,6 +32,9 @@ class PetStage extends StatelessWidget {
   final String message;
   final PetAnimationCoordinator animation;
   final bool isActive;
+
+  /// Free space between the scene and the widget above it.
+  final double headroom;
 
   @override
   Widget build(BuildContext context) {
@@ -59,6 +63,8 @@ class PetStage extends StatelessWidget {
                   coordinator: animation,
                   fallbackAsset: foxAsset,
                   isActive: isActive,
+                  // The viewport starts 32px above the scene; keep 4px clear.
+                  minTop: 32 + 4 - headroom,
                 ),
               ),
               Positioned(

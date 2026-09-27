@@ -539,22 +539,15 @@ class _GrowthIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Only the level 5 artwork exists yet; younger stages are drawn smaller.
-    final size = switch (stage) {
-      PetGrowthStage.little => 58.0,
-      PetGrowthStage.growing => 70.0,
-      PetGrowthStage.grown => 80.0,
-    };
-    final image = SizedBox.square(
-      dimension: 80,
-      child: Center(
-        child: Image.asset(
-          AppAssets.foxSittingHappyLevel05,
-          width: size,
-          height: size,
-          fit: BoxFit.contain,
-        ),
+    final image = Image.asset(
+      PetVisualResolver.assetFor(
+        stage: stage,
+        emotionalState: PetEmotionalState.happy,
+        context: PetVisualContext.profile,
       ),
+      width: 80,
+      height: 80,
+      fit: BoxFit.contain,
     );
     return Center(
       child: locked

@@ -1,9 +1,11 @@
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:finance_pet/core/assets/app_assets.dart';
 import 'package:finance_pet/features/home/presentation/pet_animation/pet_animation_coordinator.dart';
 import 'package:finance_pet/features/home/presentation/pet_animation/pet_animation_models.dart';
 import 'package:finance_pet/features/home/presentation/pet_animation/pet_animation_viewport.dart';
+import 'package:finance_pet/features/pet_progression/domain/pet_progression.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -39,55 +41,123 @@ void main() {
     return pixels;
   }
 
-  for (final state in PetAnimationState.values) {
-    final definition = state.definition;
-    test('$state asset timing and anchors match its definition', () async {
-      final data = await rootBundle.load(definition.asset);
-      final codec = await ui.instantiateImageCodec(data.buffer.asUint8List());
-      try {
-        if (definition.isStill) {
-          expect(codec.frameCount, 1);
-        } else {
-          // Idle loops forever; actions play once (no repetition).
-          expect(codec.repetitionCount, definition.loops ? -1 : 0);
-        }
-        final start = await still(
-          PetAnimationCatalog.idleFor(definition.startState)
-              .definition
-              .stillAsset,
-        );
-        final end = await still(
-          PetAnimationCatalog.idleFor(definition.endState)
-              .definition
-              .stillAsset,
-        );
-        var duration = Duration.zero;
-        ByteData? first;
-        ByteData? last;
-        for (var i = 0; i < codec.frameCount; i++) {
-          final frame = await codec.getNextFrame();
-          duration += frame.duration;
-          expect(frame.image.width, 720);
-          expect(frame.image.height, 720);
-          if (i == 0) first = await rgba(frame.image);
-          if (i == codec.frameCount - 1) last = await rgba(frame.image);
-          frame.image.dispose();
-        }
-        expect(duration, definition.duration);
-        // Codec noise between identical poses stays around 1-2 units; a
-        // mismatched anchor (e.g. happy vs hungry pose) measures ~29.
-        expect(difference(first!, start), lessThan(4), reason: 'first frame');
-        expect(difference(last!, end), lessThan(4), reason: 'last frame');
-      } finally {
-        codec.dispose();
-      }
+  /// Source frame counts of the 60 fps WebM masters (identical per stage).
+  int sourceFrames(PetAnimationState state) => switch (state) {
+    PetAnimationState.happyIdle => 298,
+    PetAnimationState.hungryIdle => 300,
+    PetAnimationState.petHappy || PetAnimationState.petHungry => 210,
+    _ => 306,
+  };
+
+  for (final stage in PetGrowthStage.values) {
+    for (final state in PetAnimationState.values) {
+      final definition = PetAnimationCatalog.definition(stage, state);
+      test(
+        '${stage.name} $state keeps every 60 fps frame and its anchors',
+        () async {
+          final data = await rootBundle.load(definition.asset);
+          final codec = await ui.instantiateImageCodec(
+            data.buffer.asUint8List(),
+          );
+          try {
+            // Idle loops forever; actions play once (no repetition).
+            expect(codec.repetitionCount, definition.loops ? -1 : 0);
+            // Every source frame survives conversion: no 30 fps sampling and no
+            // merged duplicate frames.
+            expect(codec.frameCount, sourceFrames(state));
+            final set = PetAnimationCatalog.setFor(stage);
+            final start = await still(set.stillFor(definition.startState));
+            final end = await still(set.stillFor(definition.endState));
+            var duration = Duration.zero;
+            var longest = Duration.zero;
+            ByteData? first;
+            ByteData? last;
+            for (var i = 0; i < codec.frameCount; i++) {
+              final frame = await codec.getNextFrame();
+              duration += frame.duration;
+              if (frame.duration > longest) longest = frame.duration;
+              expect(frame.image.width, 720);
+              expect(frame.image.height, 720);
+              if (i == 0) first = await rgba(frame.image);
+              if (i == codec.frameCount - 1) last = await rgba(frame.image);
+              frame.image.dispose();
+            }
+            expect(duration, definition.duration);
+            // 16/17 ms frames: effective rate is 60 fps, never 58.8 or 30.
+            expect(longest, const Duration(milliseconds: 17));
+            final fps = codec.frameCount * 1000 / duration.inMilliseconds;
+            expect(fps, closeTo(60, 0.05));
+            // Codec noise between identical poses stays around 1-2 units; a
+            // mismatched anchor (e.g. happy vs hungry pose) measures 20+.
+            expect(
+              difference(first!, start),
+              lessThan(4),
+              reason: 'first frame',
+            );
+            expect(difference(last!, end), lessThan(4), reason: 'last frame');
+          } finally {
+            codec.dispose();
+          }
+        },
+      );
+    }
+
+    test('${stage.name} happy and hungry anchors are distinct poses', () async {
+      final set = PetAnimationCatalog.setFor(stage);
+      final happy = await still(set.happyStill);
+      final hungry = await still(set.hungryStill);
+      expect(difference(happy, hungry), greaterThan(10));
     });
   }
 
-  test('happy and hungry anchors are distinct poses', () async {
-    final happy = await still(AppAssets.foxHappyStill);
-    final hungry = await still(AppAssets.foxHungryStill);
-    expect(difference(happy, hungry), greaterThan(10));
+  test('older stages grow inside the scene with paws on one line', () {
+    const bounds = Size(400, 360);
+    final rects = {
+      for (final stage in PetGrowthStage.values)
+        stage: PetAnimationViewport.canvasRect(
+          bounds,
+          PetAnimationCatalog.setFor(stage).visual,
+          minTop: -200,
+        ),
+    };
+    double pawLine(PetGrowthStage stage) =>
+        rects[stage]!.top +
+        rects[stage]!.height *
+            PetAnimationCatalog.setFor(stage).visual.pawLineFraction;
+    double visibleHeight(PetGrowthStage stage) =>
+        rects[stage]!.height *
+        PetAnimationCatalog.setFor(stage).visual.visibleFraction;
+    for (final stage in PetGrowthStage.values) {
+      expect(pawLine(stage), closeTo(pawLine(PetGrowthStage.little), 0.01));
+    }
+    final little = visibleHeight(PetGrowthStage.little);
+    expect(visibleHeight(PetGrowthStage.growing) / little, closeTo(1.08, 1e-6));
+    expect(visibleHeight(PetGrowthStage.grown) / little, closeTo(1.16, 1e-6));
+  });
+
+  test('with little space above, older stages stop at minTop', () {
+    const bounds = Size(400, 360);
+    for (final stage in PetGrowthStage.values) {
+      final visual = PetAnimationCatalog.setFor(stage).visual;
+      final rect = PetAnimationViewport.canvasRect(bounds, visual, minTop: 0);
+      final top = rect.top + rect.height * (visual.anchorTop / 960);
+      final little = PetAnimationViewport.canvasRect(
+        bounds,
+        PetAnimationCatalog.setFor(PetGrowthStage.little).visual,
+        minTop: 0,
+      );
+      // Never smaller than Stage 1, never above minTop unless Stage 1 is.
+      expect(
+        rect.height * visual.visibleFraction,
+        greaterThanOrEqualTo(little.height * (899 / 960) - 0.01),
+      );
+      expect(
+        top,
+        greaterThanOrEqualTo(
+          math.min(0, little.top + little.height * 61 / 960) - 0.01,
+        ),
+      );
+    }
   });
 
   group('viewport', () {
@@ -119,8 +189,10 @@ void main() {
 
     Rect canvas(WidgetTester tester) {
       final origin = tester.getTopLeft(find.byType(PetAnimationViewport));
-      return PetAnimationViewport.canvasRect(const Size(400, 320))
-          .shift(origin);
+      return PetAnimationViewport.canvasRect(
+        const Size(400, 320),
+        PetAnimationCatalog.setFor(PetGrowthStage.little).visual,
+      ).shift(origin);
     }
 
     for (final base in PetBaseState.values) {
@@ -136,7 +208,7 @@ void main() {
         );
         expect(
           (image.image as AssetImage).assetName,
-          PetAnimationCatalog.idleFor(base).definition.stillAsset,
+          PetAnimationCatalog.setFor(PetGrowthStage.little).stillFor(base),
         );
         expect(find.byKey(const ValueKey('pet_animation_frame')), findsNothing);
         expect(

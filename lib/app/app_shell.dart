@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 
-import '../core/assets/app_assets.dart';
 import '../core/state/app_scope.dart';
 import '../core/widgets/app_bottom_navigation.dart';
 import '../features/budget/presentation/budget_screen.dart';
 import '../features/goals/presentation/goals_screen.dart';
 import '../features/home/presentation/home_screen.dart';
+import '../features/pet_progression/domain/pet_progression.dart';
+import '../features/pet_progression/presentation/pet_visual_resolver.dart';
 import '../features/profile/presentation/profile_screen.dart';
 import '../features/tasks/presentation/tasks_screen.dart';
 
@@ -47,7 +48,7 @@ class _AppShellState extends State<AppShell> {
 
   int _currentIndex = 0;
   late final List<Widget?> _screens;
-  bool _petPrecached = false;
+  PetGrowthStage? _precachedStage;
 
   @override
   void initState() {
@@ -59,14 +60,13 @@ class _AppShellState extends State<AppShell> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (!_petPrecached) {
-      _petPrecached = true;
-      // Home paints the anchor frame until its first clip frame is decoded,
-      // and permanently under reduce motion, so both must be ready at once.
-      for (final still in const [
-        AppAssets.foxHappyStill,
-        AppAssets.foxHungryStill,
-      ]) {
+    // Home paints the anchor frame until its first clip frame is decoded, and
+    // permanently under reduce motion: keep the current stage's stills ready.
+    final stage = AppScope.of(context).petGrowthStage;
+    if (_precachedStage != stage) {
+      _precachedStage = stage;
+      final set = PetVisualResolver.animationSetFor(stage);
+      for (final still in [set.happyStill, set.hungryStill]) {
         precacheImage(
           AssetImage(still),
           context,

@@ -8,11 +8,18 @@ import 'package:finance_pet/features/home/presentation/home_screen.dart';
 import 'package:finance_pet/features/home/presentation/pet_animation/pet_animation_coordinator.dart';
 import 'package:finance_pet/features/home/presentation/pet_animation/pet_animation_models.dart';
 import 'package:finance_pet/features/home/presentation/pet_animation/pet_animation_viewport.dart';
+import 'package:finance_pet/features/pet_progression/domain/pet_progression.dart';
+import 'package:finance_pet/features/home/presentation/widgets/pet_actions.dart';
+import 'package:finance_pet/features/home/presentation/widgets/home_task_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  Future<AppController> launch(WidgetTester tester, {int? satiety}) async {
+  Future<AppController> launch(
+    WidgetTester tester, {
+    int? satiety,
+    int? growthPoints,
+  }) async {
     await tester.binding.setSurfaceSize(const Size(412, 915));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final controller = AppController(
@@ -26,6 +33,10 @@ void main() {
     if (satiety != null) {
       // Same as a restart restoring a persisted hungry pet.
       controller.petState = controller.petState.copyWith(satiety: satiety);
+    }
+    if (growthPoints != null) {
+      // Same as a restart restoring persisted growth progress.
+      controller.petGrowthPoints = growthPoints;
     }
     await tester.pumpWidget(App(controller: controller));
     await tester.pumpAndSettle();
@@ -221,5 +232,79 @@ void main() {
       AppScope.of(tester.element(find.byType(HomeScreen))).petState.isHungry,
       isFalse,
     );
+  });
+
+  group('growth stages on Home', () {
+    String asset(WidgetTester tester) =>
+        animation(tester).currentDefinition.asset;
+
+    testWidgets('restart with Stage 3 + hungry opens the Stage 3 hungry idle', (
+      tester,
+    ) async {
+      final controller = await launch(
+        tester,
+        satiety: 10,
+        growthPoints: PetProgressionConfig.grownThreshold,
+      );
+      expect(controller.petGrowthStage, PetGrowthStage.grown);
+      expect(
+        asset(tester),
+        PetAnimationCatalog.setFor(PetGrowthStage.grown).hungryIdle,
+      );
+    });
+
+    testWidgets('Stage 1 -> 2 -> 3 switches Home to the new stage idle', (
+      tester,
+    ) async {
+      final controller = await launch(tester);
+      expect(
+        asset(tester),
+        PetAnimationCatalog.setFor(PetGrowthStage.little).happyIdle,
+      );
+      final layout = {
+        for (final type in [PetActions, HomeTaskCard, AppBottomNavigation])
+          type: tester.getRect(find.byType(type)),
+      };
+      for (final (points, stage) in [
+        (PetProgressionConfig.growingThreshold, PetGrowthStage.growing),
+        (PetProgressionConfig.grownThreshold, PetGrowthStage.grown),
+      ]) {
+        controller
+          ..petGrowthPoints = points
+          ..notifyListeners();
+        await tester.pump();
+        expect(asset(tester), PetAnimationCatalog.setFor(stage).happyIdle);
+        // Only the fox grows; the controls around it keep their places.
+        for (final entry in layout.entries) {
+          expect(tester.getRect(find.byType(entry.key)), entry.value);
+        }
+      }
+    });
+
+    testWidgets('Stage 3 feed blocks a pet tap and ends in Stage 3 idle', (
+      tester,
+    ) async {
+      final controller = await launch(
+        tester,
+        satiety: 10,
+        growthPoints: PetProgressionConfig.grownThreshold,
+      );
+      await feed(tester, FoodType.treat);
+      final set = PetAnimationCatalog.setFor(PetGrowthStage.grown);
+      // Treat (+15) from 10 still leaves him hungry: no transition clip.
+      expect(asset(tester), set.hungryIdle);
+      controller.petState = controller.petState.copyWith(satiety: 80);
+      controller.notifyListeners();
+      await tester.pump();
+      await feed(tester, FoodType.treat);
+      expect(asset(tester), set.feedHappyTreat);
+      final care = controller.petState.care;
+      await tester.tap(find.byKey(const ValueKey('home_pet_fox')));
+      await tester.pump();
+      expect(controller.petState.care, care);
+      expect(asset(tester), set.feedHappyTreat);
+      await settleClips(tester);
+      expect(asset(tester), set.happyIdle);
+    });
   });
 }

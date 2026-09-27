@@ -31,6 +31,68 @@ abstract final class AppAssets {
   static const String foxHungryStill =
       'assets/animations/fox/runtime/fox_hungry_still.webp';
 
+  // Home fox animations, growth stage 2 (masters in assets/animations/fox/V2/).
+  static const String foxStage2HappyIdle =
+      'assets/animations/fox/runtime/v2/fox_happy_idle.webp';
+  static const String foxStage2HungryIdle =
+      'assets/animations/fox/runtime/v2/fox_hungry_idle.webp';
+  static const String foxStage2PetHappy =
+      'assets/animations/fox/runtime/v2/fox_pet_happy.webp';
+  static const String foxStage2PetHungry =
+      'assets/animations/fox/runtime/v2/fox_pet_hungry.webp';
+  static const String foxStage2FeedHappyBasic =
+      'assets/animations/fox/runtime/v2/fox_feed_happy_basic.webp';
+  static const String foxStage2FeedHappyHealthy =
+      'assets/animations/fox/runtime/v2/fox_feed_happy_healthy.webp';
+  static const String foxStage2FeedHappyTreat =
+      'assets/animations/fox/runtime/v2/fox_feed_happy_treat.webp';
+  static const String foxStage2FeedHungryBasic =
+      'assets/animations/fox/runtime/v2/fox_feed_hungry_basic.webp';
+  static const String foxStage2FeedHungryHealthy =
+      'assets/animations/fox/runtime/v2/fox_feed_hungry_healthy.webp';
+  static const String foxStage2FeedHungryTreat =
+      'assets/animations/fox/runtime/v2/fox_feed_hungry_treat.webp';
+  static const String foxStage2HappyStill =
+      'assets/animations/fox/runtime/v2/fox_happy_still.webp';
+  static const String foxStage2HungryStill =
+      'assets/animations/fox/runtime/v2/fox_hungry_still.webp';
+
+  // Home fox animations, growth stage 3 (masters in assets/animations/fox/V3/).
+  static const String foxStage3HappyIdle =
+      'assets/animations/fox/runtime/v3/fox_happy_idle.webp';
+  static const String foxStage3HungryIdle =
+      'assets/animations/fox/runtime/v3/fox_hungry_idle.webp';
+  static const String foxStage3PetHappy =
+      'assets/animations/fox/runtime/v3/fox_pet_happy.webp';
+  static const String foxStage3PetHungry =
+      'assets/animations/fox/runtime/v3/fox_pet_hungry.webp';
+  static const String foxStage3FeedHappyBasic =
+      'assets/animations/fox/runtime/v3/fox_feed_happy_basic.webp';
+  static const String foxStage3FeedHappyHealthy =
+      'assets/animations/fox/runtime/v3/fox_feed_happy_healthy.webp';
+  static const String foxStage3FeedHappyTreat =
+      'assets/animations/fox/runtime/v3/fox_feed_happy_treat.webp';
+  static const String foxStage3FeedHungryBasic =
+      'assets/animations/fox/runtime/v3/fox_feed_hungry_basic.webp';
+  static const String foxStage3FeedHungryHealthy =
+      'assets/animations/fox/runtime/v3/fox_feed_hungry_healthy.webp';
+  static const String foxStage3FeedHungryTreat =
+      'assets/animations/fox/runtime/v3/fox_feed_hungry_treat.webp';
+  static const String foxStage3HappyStill =
+      'assets/animations/fox/runtime/v3/fox_happy_still.webp';
+  static const String foxStage3HungryStill =
+      'assets/animations/fox/runtime/v3/fox_hungry_still.webp';
+
+  // Stage artwork outside Home (Profile, summaries).
+  static const String foxHappyLevel2 =
+      'assets/images/characters/fox/Fox_Happy_LVL2.png';
+  static const String foxHappyLevel3 =
+      'assets/images/characters/fox/Fox_Happy_LVL3.png';
+  static const String foxSadLevel2 =
+      'assets/images/characters/fox/Fox_Sad_LVL2.png';
+  static const String foxSadLevel3 =
+      'assets/images/characters/fox/Fox_Sad_LVL3.png';
+
   // Canonical Fox
   static const String foxSittingHappyLevel05 =
       'assets/images/characters/fox/fox_sitting_happy_level_05.png';

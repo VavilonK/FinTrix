@@ -39,6 +39,20 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   int _pettingSequence = 0;
   PetAnimationCoordinator? _animation;
 
+  /// Measured free space above the pet scene (non-scrolling layout only).
+  double _headroom = AppSpacing.sm;
+
+  /// The gap is laid out after the scene in the same frame, so a new value
+  /// is applied on the next frame (only when the screen size changes).
+  void _reportHeadroom(double value) {
+    if ((value - _headroom).abs() < 0.5) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && (value - _headroom).abs() >= 0.5) {
+        setState(() => _headroom = value);
+      }
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -50,13 +64,18 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     super.didChangeDependencies();
     // Runs whenever AppScope notifies: satiety decay, feeding, restore,
     // period end or a reset all flow into the visual base state from here.
-    final base = PetBaseState.of(AppScope.of(context).petState);
+    final appState = AppScope.of(context);
+    final base = PetBaseState.of(appState.petState);
+    // PetGrowthStage from the domain is the only source of the visual stage.
+    final stage = appState.petGrowthStage;
     final animationsEnabled = !MediaQuery.disableAnimationsOf(context);
     final animation = _animation ??= PetAnimationCoordinator(
       baseState: base,
+      growthStage: stage,
       animationsEnabled: animationsEnabled,
     );
     animation.syncBaseState(base);
+    animation.syncGrowthStage(stage);
     animation.setAnimationsEnabled(animationsEnabled);
   }
 
@@ -199,9 +218,17 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     if (needsScroll)
                       const SizedBox(height: AppSpacing.sm)
                     else
-                      const Spacer(),
+                      Expanded(
+                        child: LayoutBuilder(
+                          builder: (context, gap) {
+                            _reportHeadroom(gap.maxHeight);
+                            return const SizedBox.shrink();
+                          },
+                        ),
+                      ),
                     PetStage(
                       height: stageHeight,
+                      headroom: needsScroll ? AppSpacing.sm : _headroom,
                       isActive: widget.isActive,
                       animation: _animation!,
                       mood: pet.mood,

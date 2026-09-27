@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -18,6 +19,7 @@ class PetAnimationViewport extends StatefulWidget {
     required this.coordinator,
     required this.fallbackAsset,
     required this.isActive,
+    this.minTop = earClearance,
     super.key,
   });
 
@@ -26,6 +28,11 @@ class PetAnimationViewport extends StatefulWidget {
   /// Legacy PNG, only shown if the runtime assets cannot be loaded.
   final String fallbackAsset;
   final bool isActive;
+
+  /// Highest point (in this widget's coordinates, may be negative) the fox's
+  /// ears may reach before older stages stop growing, so they never cover
+  /// the card above the scene.
+  final double minTop;
 
   /// Idle frames advance this much faster while an action waits for the idle
   /// loop to come back to its anchor pose.
@@ -36,10 +43,18 @@ class PetAnimationViewport extends StatefulWidget {
   /// preferred over a multi-second wait on slow devices).
   static const catchUpBudget = Duration(seconds: 1);
 
-  /// Places the shared animation canvas so the anchor pose keeps the height
-  /// and paw line of the canonical PNG (1214x1295, opaque y=24..1233).
-  /// Runtime anchor frames are opaque at y=61..959 of 960.
-  static Rect canvasRect(Size bounds) {
+  /// Places the shared animation canvas for a growth stage. Every stage keeps
+  /// its paws on the paw line of the canonical PNG (1214x1295, opaque
+  /// y=24..1233); the anchor pose is `visual.growth` times that PNG's height.
+  /// Only the canvas changes size, never the scene around it.
+  /// Default [minTop]: keeps ears clear of a card 12px above the scene.
+  static const double earClearance = 24;
+
+  static Rect canvasRect(
+    Size bounds,
+    PetStageVisualConfig visual, {
+    double minTop = earClearance,
+  }) {
     final area = Offset.zero & bounds;
     final pngSize = applyBoxFit(
       BoxFit.contain,
@@ -47,8 +62,15 @@ class PetAnimationViewport extends StatefulWidget {
       bounds,
     ).destination;
     final pngRect = Alignment.bottomCenter.inscribe(pngSize, area);
-    final side = pngRect.height * (1209 / 1295) / (899 / 960);
-    final top = pngRect.top + pngRect.height * (24 / 1295) - side * (61 / 960);
+    final baseHeight = pngRect.height * (1209 / 1295);
+    final pawLine = pngRect.top + pngRect.height * (1233 / 1295);
+    // Where space above the scene is short, older stages grow only until the
+    // ears reach [minTop]; they are never drawn smaller than Stage 1.
+    final visibleHeight = (baseHeight * visual.growth)
+        .clamp(baseHeight, math.max(baseHeight, pawLine - minTop))
+        .toDouble();
+    final side = visibleHeight / visual.visibleFraction;
+    final top = pawLine - side * visual.pawLineFraction;
     return Rect.fromLTWH((bounds.width - side) / 2, top, side, side);
   }
 
@@ -60,7 +82,7 @@ class _PetAnimationViewportState extends State<PetAnimationViewport>
     with WidgetsBindingObserver {
   PetClipCache? _cache;
   PetClipSession? _session;
-  PetAnimationState? _sessionState;
+  PetAnimationDefinition? _sessionDefinition;
   int? _sessionPlayId;
   int? _loadingPlayId;
   ui.Image? _image;
@@ -141,16 +163,16 @@ class _PetAnimationViewportState extends State<PetAnimationViewport>
       return;
     }
     cache.retain({
-      for (final state in _coordinator.preloadSet) state.definition.asset,
+      for (final definition in _coordinator.preloadSet) definition.asset,
     });
 
-    final wanted = _coordinator.current;
+    final wanted = _coordinator.currentDefinition;
     final playId = _coordinator.playId;
     if (_sessionPlayId == playId || _loadingPlayId == playId) {
       _ensureTicking();
       return;
     }
-    if (wanted.isIdle && wanted == _sessionState) {
+    if (wanted.loops && wanted.asset == _sessionDefinition?.asset) {
       // Interrupting an action that never started, or a rebuild: the idle
       // keeps its place in the loop instead of restarting.
       _sessionPlayId = playId;
@@ -159,12 +181,12 @@ class _PetAnimationViewportState extends State<PetAnimationViewport>
       _ensureTicking();
       return;
     }
-    if (_failedAssets.contains(wanted.definition.asset)) {
+    if (_failedAssets.contains(wanted.asset)) {
       _showStill();
-      if (!wanted.isIdle) _coordinator.actionCompleted(playId);
+      if (!wanted.loops) _coordinator.actionCompleted(playId);
       return;
     }
-    if (!wanted.isIdle && !_atAnchor()) {
+    if (!wanted.loops && !_atAnchor()) {
       // Let the idle finish its loop quickly and cut at its anchor frame.
       _catchingUp = true;
       _catchUpStartedAt ??= DateTime.now();
@@ -178,20 +200,20 @@ class _PetAnimationViewportState extends State<PetAnimationViewport>
   /// an action to cut in. Stills and not-yet-decoded idles always do.
   bool _atAnchor() {
     final session = _session;
-    final state = _sessionState;
-    if (session == null || state == null || session.frameCount <= 1) {
+    final definition = _sessionDefinition;
+    if (session == null || definition == null || session.frameCount <= 1) {
       return true;
     }
-    return state.isIdle && session.elapsed < state.definition.anchorWindow;
+    return definition.loops && session.elapsed < definition.anchorWindow;
   }
 
-  void _switchTo(PetAnimationState state, int playId) {
+  void _switchTo(PetAnimationDefinition definition, int playId) {
     // Hold the frame on screen until the next clip's first frame is ready.
     _cancelTick();
     _catchingUp = false;
     _catchUpStartedAt = null;
     _loadingPlayId = playId;
-    final asset = state.definition.asset;
+    final asset = definition.asset;
     _cache!.take(asset).then((session) {
       if (!mounted || playId != _coordinator.playId) {
         session?.dispose();
@@ -201,17 +223,17 @@ class _PetAnimationViewportState extends State<PetAnimationViewport>
       if (session == null) {
         _failedAssets.add(asset);
         _showStill();
-        if (!state.isIdle) _coordinator.actionCompleted(playId);
+        if (!definition.loops) _coordinator.actionCompleted(playId);
         return;
       }
       _cancelTick();
       final previous = _session;
       _session = session;
-      _sessionState = state;
+      _sessionDefinition = definition;
       _sessionPlayId = playId;
       _setImage(session.image);
       if (previous != null) _cache!.recycle(previous);
-      if (!state.isIdle) _coordinator.actionStarted(playId);
+      if (!definition.loops) _coordinator.actionStarted(playId);
       _ensureTicking();
     });
   }
@@ -233,12 +255,12 @@ class _PetAnimationViewportState extends State<PetAnimationViewport>
   /// one tick is pending; [_frameTimer] stays set until it has completed.
   void _schedule() {
     final session = _session;
-    final state = _sessionState;
-    if (session == null || state == null || !_playing) return;
+    final definition = _sessionDefinition;
+    if (session == null || definition == null || !_playing) return;
     if (session.frameCount <= 1) return;
     var due = session.frameDuration;
     if (_catchingUp) due = due ~/ PetAnimationViewport.catchUpSpeed;
-    if (!state.definition.loops && session.isLastFrame) {
+    if (!definition.loops && session.isLastFrame) {
       final playId = _sessionPlayId!;
       // The last frame stays up until the destination idle replaces it.
       _frameTimer = Timer(due, () => _coordinator.actionCompleted(playId));
@@ -265,7 +287,7 @@ class _PetAnimationViewportState extends State<PetAnimationViewport>
           (session.isLastFrame || overBudget) &&
           !_coordinator.current.isIdle) {
         // The loop is back at its anchor: start the action in its place.
-        _switchTo(_coordinator.current, _coordinator.playId);
+        _switchTo(_coordinator.currentDefinition, _coordinator.playId);
         return;
       }
       session.advance(frame);
@@ -291,7 +313,7 @@ class _PetAnimationViewportState extends State<PetAnimationViewport>
     _catchUpStartedAt = null;
     _loadingPlayId = null;
     _sessionPlayId = null;
-    _sessionState = null;
+    _sessionDefinition = null;
     final session = _session;
     _session = null;
     if (session != null) _cache?.recycle(session);
@@ -326,13 +348,24 @@ class _PetAnimationViewportState extends State<PetAnimationViewport>
         ),
       );
     }
+    // Geometry follows the clip on screen, so a stage switch moves the canvas
+    // in the same frame as the new stage's idle.
+    final visual =
+        (_sessionDefinition ?? _coordinator.currentDefinition).visual;
     return RepaintBoundary(
       child: LayoutBuilder(
         builder: (context, constraints) => Stack(
           fit: StackFit.expand,
+          // Older stages are drawn larger than the scene box; ears and tail
+          // must not be clipped.
+          clipBehavior: Clip.none,
           children: [
             Positioned.fromRect(
-              rect: PetAnimationViewport.canvasRect(constraints.biggest),
+              rect: PetAnimationViewport.canvasRect(
+                constraints.biggest,
+                visual,
+                minTop: widget.minTop,
+              ),
               child: content,
             ),
           ],
@@ -344,8 +377,6 @@ class _PetAnimationViewportState extends State<PetAnimationViewport>
   /// The anchor pose of the clip on screen (or about to be), which is also
   /// the reduce-motion frame for the current base state.
   String get _stillAsset => _coordinator.animationsEnabled
-      ? (_sessionState ?? _coordinator.current).definition.stillAsset
-      : PetAnimationCatalog.idleFor(_coordinator.baseState)
-            .definition
-            .stillAsset;
+      ? (_sessionDefinition ?? _coordinator.currentDefinition).stillAsset
+      : _coordinator.stillAsset;
 }
