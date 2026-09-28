@@ -42,11 +42,16 @@ class _ParentOnboardingFlowState extends State<ParentOnboardingFlow> {
       ),
       _OnboardingStep.complete => SetupCompleteScreen(
         childName: _childName,
-        onStart: () => AppScope.of(context).completeParentSetup(
-          childName: _childName,
-          age: _childAge,
-          biometricEnabled: _biometricEnabled,
-        ),
+        onStart: () async {
+          final state = AppScope.of(context);
+          // The child's intro to the game follows the parent's setup once.
+          state.requestTutorial();
+          await state.completeParentSetup(
+            childName: _childName,
+            age: _childAge,
+            biometricEnabled: _biometricEnabled,
+          );
+        },
       ),
     };
 

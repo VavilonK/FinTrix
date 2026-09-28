@@ -72,7 +72,7 @@ class DemoCompleteScreen extends StatelessWidget {
                         ),
                         _ResultRow('Отложено', state.demoTotalDeposited),
                         _ResultRow(
-                          'Рыжик',
+                          state.petName,
                           '${startStage.shortTitle} → ${endStage.shortTitle}',
                         ),
                         _ResultRow(

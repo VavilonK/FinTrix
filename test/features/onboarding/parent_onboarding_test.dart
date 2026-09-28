@@ -6,6 +6,7 @@ import 'package:finance_pet/features/adult/domain/parent_access_service.dart';
 import 'package:finance_pet/features/home/presentation/home_screen.dart';
 import 'package:finance_pet/features/periods/domain/game_period.dart';
 import 'package:finance_pet/features/profile/presentation/profile_screen.dart';
+import 'package:finance_pet/features/onboarding/presentation/game_intro_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -55,6 +56,14 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('onboarding_finish')));
     await tester.pumpAndSettle();
 
+    // The child's intro to the three decisions follows the parent's setup.
+    expect(find.byType(GameIntroScreen), findsOneWidget);
+    for (var page = 0; page < 4; page++) {
+      await tester.tap(find.byKey(const ValueKey('intro_next')));
+      await tester.pumpAndSettle();
+    }
+    expect(find.byType(GameIntroScreen), findsNothing);
+    expect(controller.tutorialSeen, isTrue);
     expect(find.byType(HomeScreen), findsOneWidget);
     expect(controller.parentSetupCompleted, isTrue);
     expect(controller.childName, 'Лена');

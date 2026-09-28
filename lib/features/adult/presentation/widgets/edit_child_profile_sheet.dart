@@ -36,6 +36,7 @@ class EditChildProfileSheet extends StatefulWidget {
 
 class _EditChildProfileSheetState extends State<EditChildProfileSheet> {
   late final TextEditingController _nameController;
+  late final TextEditingController _petNameController;
   late int _age;
   String? _error;
 
@@ -43,12 +44,14 @@ class _EditChildProfileSheetState extends State<EditChildProfileSheet> {
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.state.childName);
+    _petNameController = TextEditingController(text: widget.state.petName);
     _age = widget.state.age;
   }
 
   @override
   void dispose() {
     _nameController.dispose();
+    _petNameController.dispose();
     super.dispose();
   }
 
@@ -58,6 +61,14 @@ class _EditChildProfileSheetState extends State<EditChildProfileSheet> {
       setState(() {
         _error =
             'Введите имя длиной до ${ChildProfile.maximumNameLength} символов.';
+      });
+      return;
+    }
+    if (!widget.state.setPetName(_petNameController.text)) {
+      setState(() {
+        _error =
+            'Введите имя питомца длиной до '
+            '${AppController.maximumPetNameLength} символов.';
       });
       return;
     }
@@ -79,7 +90,18 @@ class _EditChildProfileSheetState extends State<EditChildProfileSheet> {
           autofocus: widget.focusName,
           maxLength: ChildProfile.maximumNameLength,
           textCapitalization: TextCapitalization.words,
-          decoration: const InputDecoration(labelText: 'Имя ребёнка'),
+          decoration: const InputDecoration(
+            labelText: 'Игровое имя ребёнка',
+            helperText: 'Можно придумать никнейм — настоящее имя не нужно.',
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        TextField(
+          key: const ValueKey('adult_pet_name_field'),
+          controller: _petNameController,
+          maxLength: AppController.maximumPetNameLength,
+          textCapitalization: TextCapitalization.words,
+          decoration: const InputDecoration(labelText: 'Имя питомца'),
         ),
         const SizedBox(height: AppSpacing.xs),
         Text('Возраст', style: AppTextStyles.cardTitle),

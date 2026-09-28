@@ -5,6 +5,7 @@ import '../core/widgets/app_bottom_navigation.dart';
 import '../features/budget/presentation/budget_screen.dart';
 import '../features/goals/presentation/goals_screen.dart';
 import '../features/home/presentation/home_screen.dart';
+import '../features/onboarding/presentation/game_intro_screen.dart';
 import '../features/pet_progression/domain/pet_progression.dart';
 import '../features/pet_progression/presentation/pet_visual_resolver.dart';
 import '../features/profile/presentation/profile_screen.dart';
@@ -57,9 +58,18 @@ class _AppShellState extends State<AppShell> {
     _screens[_currentIndex] = _createScreen(_currentIndex);
   }
 
+  bool _introScheduled = false;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    // The child's intro to the three money decisions, once per profile.
+    if (!_introScheduled && !AppScope.of(context).tutorialSeen) {
+      _introScheduled = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) GameIntroScreen.open(context);
+      });
+    }
     // Home paints the anchor frame until its first clip frame is decoded, and
     // permanently under reduce motion: keep the current stage's stills ready.
     final stage = AppScope.of(context).petGrowthStage;

@@ -60,7 +60,7 @@ void main() {
     Navigator.of(tester.element(find.byType(PeriodDetailsSheet))).pop();
     await tester.pumpAndSettle();
 
-    await tester.scrollUntilVisible(find.text('Развитие Рыжика'), 400);
+    await tester.scrollUntilVisible(find.text('Развитие питомца'), 400);
     expect(find.text('Рыжик подрос'), findsOneWidget);
     expect(find.text('55 / 90'), findsOneWidget);
   });

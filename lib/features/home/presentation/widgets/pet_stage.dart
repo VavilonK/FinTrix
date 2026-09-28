@@ -7,6 +7,7 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_progress_bar.dart';
 import '../../../../core/widgets/speech_bubble.dart';
+import '../pet_messages.dart';
 import '../../../pet_progression/domain/pet_appearance.dart';
 import '../pet_animation/pet_animation_coordinator.dart';
 import '../pet_animation/pet_animation_viewport.dart';
@@ -138,55 +139,73 @@ class _PetStatusMeter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textScale = MediaQuery.textScalerOf(context).scale(1);
-    return SizedBox(
-      height: textScale >= 1.5 ? 58 : 34 + (textScale - 1) * 28,
-      child: DecoratedBox(
-        decoration: const BoxDecoration(
-          color: AppColors.surfaceTranslucent,
-          borderRadius: AppRadii.capsule,
-          boxShadow: AppShadows.card,
-        ),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(3, 2, 8, 2),
-          child: Row(
-            children: [
-              Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: color,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.surface, width: 2),
-                ),
-                child: Icon(icon, color: AppColors.surface, size: 17),
+    // Tapping a meter explains why it has this value and how to raise it.
+    return Semantics(
+      button: true,
+      hint: 'Почему такое значение?',
+      child: GestureDetector(
+        key: ValueKey('pet_meter_$label'),
+        behavior: HitTestBehavior.opaque,
+        onTap: () => ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(
+              content: Text(
+                PetMessages.explainMeter(label, (value * 100).round()),
               ),
-              const SizedBox(width: 4),
-              Expanded(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      label,
-                      maxLines: 1,
-                      style: AppTextStyles.caption.copyWith(
-                        fontSize: 12,
-                        color: AppColors.navy,
-                        fontWeight: FontWeight.w700,
-                      ),
+            ),
+          ),
+        child: SizedBox(
+          height: textScale >= 1.5 ? 58 : 34 + (textScale - 1) * 28,
+          child: DecoratedBox(
+            decoration: const BoxDecoration(
+              color: AppColors.surfaceTranslucent,
+              borderRadius: AppRadii.capsule,
+              boxShadow: AppShadows.card,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(3, 2, 8, 2),
+              child: Row(
+                children: [
+                  Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: color,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: AppColors.surface, width: 2),
                     ),
-                    const SizedBox(height: 2),
-                    AppProgressBar(
-                      value: value,
-                      height: 7,
-                      foregroundColor: color,
-                      animationDuration: Duration.zero,
-                      semanticLabel: label,
+                    child: Icon(icon, color: AppColors.surface, size: 17),
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          label,
+                          maxLines: 1,
+                          style: AppTextStyles.caption.copyWith(
+                            fontSize: 12,
+                            color: AppColors.navy,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        AppProgressBar(
+                          value: value,
+                          height: 7,
+                          foregroundColor: color,
+                          animationDuration: Duration.zero,
+                          semanticLabel: label,
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),

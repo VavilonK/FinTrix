@@ -128,7 +128,7 @@ class _MissionTaskScreenState extends State<MissionTaskScreen> {
                   ),
                   child: PrimaryGradientButton(
                     key: const ValueKey('mission_submit'),
-                    label: 'Ответить',
+                    label: _submitLabel(task),
                     onPressed: canSubmit
                         ? () => _submit(context, appState, task)
                         : null,
@@ -195,11 +195,29 @@ class _MissionTaskScreenState extends State<MissionTaskScreen> {
               option: option,
               selected: _selectedOptionId == option.id,
               showCoin: task.theme == MissionTheme.math,
+              // Real purchases the child cannot afford stay visible with the
+              // missing amount instead of disappearing.
+              shortBy: task.economyType == TaskEconomyType.realExpense
+                  ? option.spendCoins - AppScope.of(context).balance
+                  : 0,
               onTap: () => setState(() => _selectedOptionId = option.id),
             ),
           ),
       ],
     );
+  }
+
+  /// A real purchase names its price on the button, so tapping it is the
+  /// purchase confirmation (ТЗ 2.5.6).
+  String _submitLabel(MissionTask task) {
+    if (task.economyType != TaskEconomyType.realExpense) return 'Ответить';
+    final option = task.options
+        .where((candidate) => candidate.id == _selectedOptionId)
+        .firstOrNull;
+    if (option == null) return 'Выбери вариант';
+    return option.spendCoins > 0
+        ? 'Купить за ${option.spendCoins}'
+        : 'Не покупать';
   }
 
   Future<void> _submit(
@@ -502,12 +520,16 @@ class _OptionCard extends StatelessWidget {
     required this.selected,
     required this.showCoin,
     required this.onTap,
+    this.shortBy = 0,
   });
 
   final MissionTaskOption option;
   final bool selected;
   final bool showCoin;
   final VoidCallback onTap;
+
+  /// Coins missing for this purchase; > 0 disables the option.
+  final int shortBy;
 
   @override
   Widget build(BuildContext context) {
@@ -537,61 +559,72 @@ class _OptionCard extends StatelessWidget {
           color: AppColors.transparent,
           borderRadius: AppRadii.card,
           child: InkWell(
-            onTap: onTap,
+            onTap: shortBy > 0 ? null : onTap,
             borderRadius: AppRadii.card,
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.sm),
-              child: Row(
-                children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
+            child: Opacity(
+              opacity: shortBy > 0 ? 0.6 : 1,
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.sm),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: selected
+                            ? AppColors.primaryBlue
+                            : const Color(0xFFF1F4FC),
+                        shape: BoxShape.circle,
+                      ),
+                      alignment: Alignment.center,
+                      child: showCoin
+                          ? Image.asset(
+                              AppAssets.financeCoinSingle,
+                              width: 34,
+                              height: 34,
+                            )
+                          : Icon(
+                              selected
+                                  ? Icons.check_rounded
+                                  : Icons.touch_app_rounded,
+                              color: selected
+                                  ? AppColors.surface
+                                  : AppColors.purple,
+                            ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(option.label, style: AppTextStyles.cardTitle),
+                          if (option.subtitle != null || cost != null)
+                            Text(
+                              option.subtitle ?? cost!,
+                              style: AppTextStyles.caption,
+                            ),
+                          if (shortBy > 0)
+                            Text(
+                              'Не хватает $shortBy монет',
+                              style: AppTextStyles.caption.copyWith(
+                                color: AppColors.pink,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    Icon(
+                      selected
+                          ? Icons.check_circle_rounded
+                          : Icons.radio_button_unchecked_rounded,
                       color: selected
                           ? AppColors.primaryBlue
-                          : const Color(0xFFF1F4FC),
-                      shape: BoxShape.circle,
+                          : AppColors.disabled,
+                      size: 28,
                     ),
-                    alignment: Alignment.center,
-                    child: showCoin
-                        ? Image.asset(
-                            AppAssets.financeCoinSingle,
-                            width: 34,
-                            height: 34,
-                          )
-                        : Icon(
-                            selected
-                                ? Icons.check_rounded
-                                : Icons.touch_app_rounded,
-                            color: selected
-                                ? AppColors.surface
-                                : AppColors.purple,
-                          ),
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(option.label, style: AppTextStyles.cardTitle),
-                        if (option.subtitle != null || cost != null)
-                          Text(
-                            option.subtitle ?? cost!,
-                            style: AppTextStyles.caption,
-                          ),
-                      ],
-                    ),
-                  ),
-                  Icon(
-                    selected
-                        ? Icons.check_circle_rounded
-                        : Icons.radio_button_unchecked_rounded,
-                    color: selected
-                        ? AppColors.primaryBlue
-                        : AppColors.disabled,
-                    size: 28,
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

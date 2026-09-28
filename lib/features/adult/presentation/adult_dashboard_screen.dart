@@ -82,6 +82,10 @@ class AdultDashboardScreen extends StatelessWidget {
                 const SizedBox(height: AppSpacing.sm),
                 _PetProgressionCard(state: state, lastPeriod: lastPeriod),
                 const SizedBox(height: AppSpacing.sm),
+                const _AppGoalsCard(),
+                const SizedBox(height: AppSpacing.sm),
+                _ParentRewardCard(state: state),
+                const SizedBox(height: AppSpacing.sm),
                 _ParentAccessCard(state: state),
                 const SizedBox(height: AppSpacing.sm),
                 _DataActionsCard(state: state),
@@ -119,6 +123,13 @@ class _ChildProfileManagementCard extends StatelessWidget {
             key: const ValueKey('adult_edit_child_age'),
             icon: Icons.cake_outlined,
             label: 'Возраст — ${state.age} лет',
+            onTap: () =>
+                showEditChildProfileSheet(context: context, state: state),
+          ),
+          _ActionTile(
+            key: const ValueKey('adult_edit_pet_name'),
+            icon: Icons.pets_rounded,
+            label: 'Питомец — ${state.petName}',
             onTap: () =>
                 showEditChildProfileSheet(context: context, state: state),
           ),
@@ -599,7 +610,7 @@ class _PetProgressionCard extends StatelessWidget {
         lastPeriod!.petStageAtStart != lastPeriod!.petStageAtEnd;
 
     return _AdultCard(
-      title: 'Развитие Рыжика',
+      title: 'Развитие питомца',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -763,7 +774,7 @@ class _ActionTile extends StatelessWidget {
 }
 
 class _AdultCard extends StatelessWidget {
-  const _AdultCard({this.title, required this.child});
+  const _AdultCard({this.title, required this.child, super.key});
 
   final String? title;
   final Widget child;
@@ -1182,4 +1193,174 @@ String _completedGoalTitle(String title) {
   return value.isEmpty
       ? title
       : '${value[0].toUpperCase()}${value.substring(1)}';
+}
+
+/// What the app teaches (ТЗ 2.5.12): the learning goals, without grading
+/// the child.
+class _AppGoalsCard extends StatelessWidget {
+  const _AppGoalsCard();
+
+  static const goals = [
+    (
+      Icons.account_balance_wallet_rounded,
+      'Планировать бюджет',
+      'Распределять монеты на важное, приятное и копилку до начала дня.',
+    ),
+    (
+      Icons.check_circle_rounded,
+      'Различать нужное и желаемое',
+      'Сначала еда и уход, приятные покупки — по возможности.',
+    ),
+    (
+      Icons.savings_rounded,
+      'Копить на цель',
+      'Регулярно откладывать часть монет и видеть, как цель приближается.',
+    ),
+    (
+      Icons.insights_rounded,
+      'Оценивать решения',
+      'Сравнивать план и факт и понимать, к чему привёл выбор.',
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return _AdultCard(
+      key: const ValueKey('adult_app_goals'),
+      title: 'Чему учит приложение',
+      child: Column(
+        children: [
+          for (final (icon, title, text) in goals)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(icon, color: AppColors.primaryBlue),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(title, style: AppTextStyles.body),
+                        Text(text, style: AppTextStyles.bodySecondary),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'Монеты в игре не имеют реальной стоимости. Взрослый поддерживает, '
+            'но решения принимает ребёнок.',
+            style: AppTextStyles.caption,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Parent's extra coins (ТЗ 2.5.12): a fixed small amount with a reason the
+/// child sees in the coin history. It never replaces the child's decisions.
+class _ParentRewardCard extends StatefulWidget {
+  const _ParentRewardCard({required this.state});
+
+  final AppController state;
+
+  @override
+  State<_ParentRewardCard> createState() => _ParentRewardCardState();
+}
+
+class _ParentRewardCardState extends State<_ParentRewardCard> {
+  static const reasons = [
+    'За помощь по дому',
+    'За хорошую учёбу',
+    'За выполненное обещание',
+  ];
+
+  int _amount = AppController.parentRewardAmounts.first;
+  String _reason = reasons.first;
+
+  Future<void> _award() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Начислить монеты?'),
+        content: Text(
+          '$_amount игровых монет — «$_reason». Ребёнок увидит это '
+          'начисление в истории монет.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Отмена'),
+          ),
+          FilledButton(
+            key: const ValueKey('parent_reward_confirm'),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Начислить'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    if (widget.state.awardCoinsFromParent(_amount, _reason)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Начислено $_amount монет: $_reason')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _AdultCard(
+      key: const ValueKey('adult_parent_reward'),
+      title: 'Поощрить монетами',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Небольшое поощрение за дела вне игры. Как распорядиться монетами, '
+            'решает ребёнок.',
+            style: AppTextStyles.bodySecondary,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Wrap(
+            spacing: AppSpacing.xs,
+            children: [
+              for (final amount in AppController.parentRewardAmounts)
+                ChoiceChip(
+                  key: ValueKey('parent_reward_$amount'),
+                  label: Text('+$amount'),
+                  selected: amount == _amount,
+                  onSelected: (_) => setState(() => _amount = amount),
+                ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Wrap(
+            spacing: AppSpacing.xs,
+            runSpacing: AppSpacing.xs,
+            children: [
+              for (final reason in reasons)
+                ChoiceChip(
+                  label: Text(reason),
+                  selected: reason == _reason,
+                  onSelected: (_) => setState(() => _reason = reason),
+                ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          FilledButton.icon(
+            key: const ValueKey('parent_reward_award'),
+            onPressed: _award,
+            icon: const Icon(Icons.card_giftcard_rounded),
+            label: Text('Начислить $_amount монет'),
+          ),
+        ],
+      ),
+    );
+  }
 }

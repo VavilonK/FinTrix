@@ -27,7 +27,12 @@ abstract final class DailyTaskTemplates {
     'compare_prices',
     'cultural_outing',
     'fix_receipt',
+    'split_reward',
+    'goal_days',
   ];
+
+  /// Savings scenarios; every generated mission contains one (ТЗ 2.5.8).
+  static const List<String> savingsTemplateIds = ['split_reward', 'goal_days'];
 
   static const Set<String> realExpenseTemplateIds = {
     'choose_entertainment',
@@ -151,6 +156,8 @@ abstract final class DailyTaskTemplates {
         prices: const [30, 40, 45],
       ),
       'fix_receipt' => _fixReceipt(id, difficulty, variant),
+      'split_reward' => _splitReward(id, difficulty, variant),
+      'goal_days' => _goalDays(id, difficulty, variant),
       _ => _canAfford(id, difficulty, variant),
     };
   }
@@ -714,6 +721,111 @@ abstract final class DailyTaskTemplates {
     );
   }
 
+  /// A real choice with a consequence: the reward lands on the balance, in
+  /// the piggy bank, or split. Every answer is accepted; the feedback explains
+  /// what each choice means for spending now and for the goal.
+  static MissionTask _splitReward(
+    String id,
+    DifficultyLevel level,
+    int variant,
+  ) {
+    final total = switch (level) {
+      DifficultyLevel.junior => 30,
+      DifficultyLevel.middle => 40,
+      DifficultyLevel.senior => 60,
+    };
+    final half = total ~/ 2;
+    return MissionTask(
+      id: id,
+      templateId: 'split_reward',
+      title: 'Куда положим награду?',
+      description:
+          'За помощь тебе дали $total монет. Потратить сейчас или отложить '
+          'часть в копилку на цель?',
+      type: MissionTaskType.choice,
+      theme: MissionTheme.savings,
+      taskTheme: TaskTheme.finance,
+      economyType: TaskEconomyType.earning,
+      difficulty: _visualDifficulty(level),
+      difficultyLevel: level,
+      estimatedSeconds: 50,
+      rewardCoins: 0,
+      xpReward: 14,
+      acceptAnyOption: true,
+      options: [
+        MissionTaskOption(
+          id: '${id}_balance',
+          label: 'Всё в кошелёк',
+          subtitle: '+$total на баланс',
+          rewardCoins: total,
+          feedback:
+              'Все $total монет можно тратить. Но до цели мы сегодня не '
+              'приблизились — в следующий раз попробуй отложить часть.',
+        ),
+        MissionTaskOption(
+          id: '${id}_split',
+          label: 'Пополам',
+          subtitle: '+$half на баланс, +$half в копилку',
+          rewardCoins: half,
+          savingsReward: total - half,
+          feedback:
+              'Отличный баланс: $half монет на траты и ${total - half} в '
+              'копилку. Цель стала ближе!',
+        ),
+        MissionTaskOption(
+          id: '${id}_savings',
+          label: 'Всё в копилку',
+          subtitle: '+$total в копилку',
+          savingsReward: total,
+          feedback:
+              'Все $total монет в копилке — цель заметно ближе. Только '
+              'помни: на важные покупки тоже нужны монеты.',
+        ),
+      ],
+      explanation:
+          'Регулярно откладывая часть монет, ты быстрее дойдёшь до цели.',
+      scenarioKey: 'split_reward_${level.name}_${variant % 3}',
+    );
+  }
+
+  /// How many days of regular saving a goal needs.
+  static MissionTask _goalDays(String id, DifficultyLevel level, int variant) {
+    final (goal, perDay) = switch (level) {
+      DifficultyLevel.junior => ([60, 80, 100][variant % 3], 20),
+      DifficultyLevel.middle => ([150, 200, 240][variant % 3], 50),
+      DifficultyLevel.senior => ([360, 420, 480][variant % 3], 60),
+    };
+    final days = (goal / perDay).ceil();
+    final values = <int>{days, days + 1, (days - 1).clamp(1, days)}.toList()
+      ..sort();
+    return MissionTask(
+      id: id,
+      templateId: 'goal_days',
+      title: 'Сколько дней копить?',
+      description:
+          'Мяч стоит $goal монет. Каждый день ты откладываешь $perDay монет. '
+          'За сколько дней накопишь?',
+      type: MissionTaskType.calculation,
+      theme: MissionTheme.savings,
+      taskTheme: TaskTheme.finance,
+      economyType: TaskEconomyType.earning,
+      difficulty: _visualDifficulty(level),
+      difficultyLevel: level,
+      estimatedSeconds: level == DifficultyLevel.junior ? 45 : 70,
+      rewardCoins: 15,
+      xpReward: 12,
+      options: [
+        for (final value in values)
+          MissionTaskOption(id: 'd_$value', label: '$value дн.'),
+      ],
+      correctOptionId: 'd_$days',
+      explanation:
+          '$goal : $perDay = $days. Если откладывать понемногу каждый день, '
+          'цель достигается за $days дн.',
+      scenarioKey: 'goal_days_${level.name}_${variant % 3}',
+    );
+  }
+
   static MissionTask _realChoice({
     required String id,
     required String templateId,
@@ -726,13 +838,11 @@ abstract final class DailyTaskTemplates {
     required List<String> labels,
     required List<int> prices,
   }) {
-    final affordable = <(String, int)>[
-      for (var index = 0; index < labels.length; index++)
-        if (prices[index] <= availableBalance) (labels[index], prices[index]),
-    ];
-    final choices = affordable.isEmpty
-        ? <(String, int)>[(labels.first, 0)]
-        : affordable;
+    // Every option is shown with its price; the task screen marks the ones
+    // the child cannot afford with how much is missing (ТЗ 2.5.6). A want
+    // can always be postponed, and so can an essential nobody can afford.
+    final canAffordAny = prices.any((price) => price <= availableBalance);
+    final canPostpone = category == ExpenseCategory.want || !canAffordAny;
     return MissionTask(
       id: id,
       templateId: templateId,
@@ -746,18 +856,34 @@ abstract final class DailyTaskTemplates {
       difficultyLevel: difficulty,
       estimatedSeconds: 65,
       rewardCoins: 0,
-      realExpenseAmount: choices.first.$2,
+      realExpenseAmount: canAffordAny
+          ? prices.reduce((a, b) => a < b ? a : b)
+          : 0,
       xpReward: 16,
       acceptAnyOption: true,
       options: [
-        for (var index = 0; index < choices.length; index++)
+        for (var index = 0; index < labels.length; index++)
           MissionTaskOption(
             id: '${templateId}_$index',
-            label: choices[index].$1,
-            subtitle: '${choices[index].$2} монет',
-            spendCoins: choices[index].$2,
+            label: labels[index],
+            subtitle: '${prices[index]} монет',
+            spendCoins: prices[index],
             expenseCategory: category,
-            feedback: 'Выбор подходит. Расход учтён в бюджете.',
+            feedback: category == ExpenseCategory.essential
+                ? 'Покупка сделана. Это важный расход — он учтён в бюджете.'
+                : 'Покупка сделана. Это приятный расход — он учтён в бюджете.',
+          ),
+        if (canPostpone)
+          MissionTaskOption(
+            id: '${templateId}_later',
+            label: 'Не покупать сейчас',
+            subtitle: 'Отложить на потом',
+            expenseCategory: category,
+            feedback: category == ExpenseCategory.want
+                ? 'Хорошее решение: приятную покупку можно отложить, а '
+                      'монеты сохранятся.'
+                : 'Сейчас монет не хватает. Выполни задания — и вернёмся к '
+                      'этой покупке.',
           ),
       ],
       explanation: 'Ты выбрал доступный вариант.',

@@ -83,6 +83,15 @@ abstract final class AppAssets {
   static const String foxStage3HungryStill =
       'assets/animations/fox/runtime/v3/fox_hungry_still.webp';
 
+  // Purchases for Ryzhik (care items and room decorations).
+  static const String shopBrush = 'assets/images/objects/shop/care_brush.png';
+  static const String shopBathSet =
+      'assets/images/objects/shop/care_bath_set.png';
+  static const String shopTeddy = 'assets/images/objects/shop/toy_teddy.png';
+  static const String shopStarGarland =
+      'assets/images/objects/shop/toy_star_garland.png';
+  static const String shopPouf = 'assets/images/objects/shop/toy_pouf.png';
+
   // Pet customisation accessories (placed on the tracked pupils).
   static const String accessoryGlasses =
       'assets/images/characters/accessories/glasses.png';

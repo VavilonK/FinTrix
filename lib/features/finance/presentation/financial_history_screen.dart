@@ -452,6 +452,7 @@ String _categoryLabel(FinancialTransaction transaction) =>
         FinancialTransactionSource.petCare => 'Забота о Рыжике',
         FinancialTransactionSource.savings => 'Накопления',
         FinancialTransactionSource.system => 'Награда',
+        FinancialTransactionSource.parent => 'От родителя',
       },
       FinancialTransactionType.essentialExpense => 'На важное',
       FinancialTransactionType.wantExpense => 'На приятное',

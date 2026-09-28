@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../budget/presentation/plan_fact_card.dart';
+
 import '../../../core/state/app_controller.dart';
 import '../../../core/state/app_scope.dart';
 import '../../../core/theme/app_colors.dart';
@@ -75,6 +77,14 @@ class PeriodSummaryScreen extends StatelessWidget {
                             ),
                             const SizedBox(height: AppSpacing.md),
                             _GrowthSummaryCard(period: period),
+                            const SizedBox(height: AppSpacing.md),
+                            PlanFactCard(
+                              plan: period.budgetPlanSnapshot,
+                              planConfirmed: period.budgetWasConfirmed,
+                              essentialSpent: period.essentialSpent,
+                              wantSpent: period.wantSpent,
+                              saved: period.intentionalSavingsDeposited,
+                            ),
                             const SizedBox(height: AppSpacing.md),
                             RoundedSurfaceCard(
                               padding: const EdgeInsets.all(AppSpacing.md),
@@ -217,11 +227,12 @@ class _GrowthSummaryCard extends StatelessWidget {
     final threshold = PetProgressionConfig.nextStageThreshold(
       period.petGrowthPointsAtEnd,
     );
+    final name = AppScope.of(context).petName;
     final title = changedStage
         ? isGrown
-              ? 'Рыжик стал ещё взрослее!'
-              : 'Рыжик подрос!'
-        : 'Рыжик становится опытнее!';
+              ? '$name стал ещё взрослее!'
+              : '$name подрос!'
+        : '$name становится опытнее!';
 
     return RoundedSurfaceCard(
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -247,7 +258,7 @@ class _GrowthSummaryCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Развитие Рыжика', style: AppTextStyles.cardTitle),
+                    Text('Развитие питомца', style: AppTextStyles.cardTitle),
                     Text(title, style: AppTextStyles.bodySecondary),
                   ],
                 ),

@@ -80,10 +80,16 @@ class DailyMissionGenerator {
       (total, task) => total + task.estimatedSeconds,
     );
     final estimatedMinutes = (seconds / 60).ceil().clamp(18, 25);
-    final maxReward = tasks.fold<int>(
-      0,
-      (total, task) => total + task.rewardCoins,
-    );
+    // Choice tasks may pay per option (e.g. reward split with the piggy
+    // bank): count the largest option.
+    final maxReward = tasks.fold<int>(0, (total, task) {
+      final best = task.options.fold<int>(
+        0,
+        (value, option) =>
+            max(value, option.rewardCoins + option.savingsReward),
+      );
+      return total + max(task.rewardCoins, best);
+    });
 
     return DailyMission(
       id: '${day.year}_${day.month}_${day.day}_${location.id}_$age',
@@ -136,6 +142,15 @@ class DailyMissionGenerator {
       return aWasRecent.compareTo(bWasRecent);
     });
     final selected = <String>[...earningPool.take(3)];
+    // One savings scenario in every mission (ТЗ 2.5.8), preferring the one
+    // not played recently.
+    final savingsPool = [...DailyTaskTemplates.savingsTemplateIds]
+      ..shuffle(random)
+      ..sort(
+        (a, b) =>
+            (recent.contains(a) ? 1 : 0).compareTo(recent.contains(b) ? 1 : 0),
+      );
+    selected.add(savingsPool.first);
     final nonExpense = DailyTaskTemplates.allTemplateIds
         .where(
           (id) =>

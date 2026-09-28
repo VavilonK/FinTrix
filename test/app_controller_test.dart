@@ -18,9 +18,9 @@ void main() {
     }
   });
 
-  test('daily catalog exposes all 24 reusable task templates', () {
-    expect(DailyTaskTemplates.allTemplateIds, hasLength(24));
-    expect(DailyTaskTemplates.allTemplateIds.toSet(), hasLength(24));
+  test('daily catalog exposes all 26 reusable task templates', () {
+    expect(DailyTaskTemplates.allTemplateIds, hasLength(26));
+    expect(DailyTaskTemplates.allTemplateIds.toSet(), hasLength(26));
 
     for (final difficulty in DifficultyLevel.values) {
       for (final templateId in DailyTaskTemplates.allTemplateIds) {

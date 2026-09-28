@@ -552,8 +552,10 @@ void main() {
 
     await tester.tap(find.byKey(const ValueKey('home_feed_pet')));
     await tester.pumpAndSettle();
-    expect(find.text('Чем угостим Рыжика?'), findsOneWidget);
+    expect(find.text('Что купим?'), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('feed_basic')));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const ValueKey('feed_confirm')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('feed_confirm')));
     await tester.pumpAndSettle();
@@ -689,9 +691,10 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('feed_treat')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('feed_confirm')));
-    await tester.pumpAndSettle();
-    expect(find.textContaining('Сейчас монет не хватает'), findsOneWidget);
+    // Without coins the item stays visible with the missing amount and
+    // options instead of a buy button.
+    expect(find.byKey(const ValueKey('feed_confirm')), findsNothing);
+    expect(find.textContaining('не хватает 50 монет'), findsOneWidget);
     expect(state.balance, 0);
 
     final openTasks = find.byKey(const ValueKey('feed_open_tasks'));
@@ -721,6 +724,8 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('home_feed_pet')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('feed_treat')));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const ValueKey('feed_confirm')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('feed_confirm')));
     await tester.pumpAndSettle();

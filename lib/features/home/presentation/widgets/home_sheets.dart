@@ -1,20 +1,15 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/assets/app_assets.dart';
 import '../../../../core/state/app_controller.dart';
 import '../../../../core/state/app_scope.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_radii.dart';
-import '../../../../core/theme/app_shadows.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_modal_sheet.dart';
-import '../../../../core/widgets/primary_gradient_button.dart';
 import '../../../../core/widgets/rounded_surface_card.dart';
-import '../../../budget/domain/budget_usage.dart';
 import '../../../adult/presentation/adult_dashboard_screen.dart';
 import '../../../adult/presentation/parent_unlock_sheet.dart';
-import '../../domain/pet_models.dart';
+import '../../../onboarding/presentation/game_intro_screen.dart';
 
 Future<void> showBalanceSummarySheet({
   required BuildContext context,
@@ -151,6 +146,27 @@ Future<void> showSettingsSheet(BuildContext context) {
             onChanged: state.setHintsEnabled,
           ),
           const SizedBox(height: AppSpacing.md),
+          _SheetAction(
+            key: const ValueKey('settings_intro'),
+            icon: Icons.school_rounded,
+            color: AppColors.orange,
+            label: 'Как играть',
+            onTap: () {
+              Navigator.of(sheetContext).pop();
+              GameIntroScreen.open(context);
+            },
+          ),
+          _SheetAction(
+            key: const ValueKey('settings_glossary'),
+            icon: Icons.menu_book_rounded,
+            color: AppColors.green,
+            label: 'Словарик',
+            onTap: () {
+              Navigator.of(sheetContext).pop();
+              GlossaryScreen.open(context);
+            },
+          ),
+          const SizedBox(height: AppSpacing.xs),
           _SheetAction(
             key: const ValueKey('settings_adult_section'),
             icon: Icons.family_restroom_rounded,
@@ -293,399 +309,6 @@ Future<void> _confirmRestartDemo({
 }
 
 /// Resolves to the food that was bought and fed, or null if nothing was.
-Future<FoodType?> showFeedPetSheet({
-  required BuildContext context,
-  required VoidCallback onOpenTasks,
-}) {
-  return showAppModalSheet<FoodType>(
-    context: context,
-    builder: (sheetContext) => _FeedPetSheet(
-      onOpenTasks: () => _closeAndRun(sheetContext, onOpenTasks),
-    ),
-  );
-}
-
-class _FeedPetSheet extends StatefulWidget {
-  const _FeedPetSheet({required this.onOpenTasks});
-
-  final VoidCallback onOpenTasks;
-
-  @override
-  State<_FeedPetSheet> createState() => _FeedPetSheetState();
-}
-
-class _FeedPetSheetState extends State<_FeedPetSheet> {
-  bool _insufficientFunds = false;
-  FoodType? _pendingFood;
-  FoodType _selected = FoodType.basic;
-
-  @override
-  Widget build(BuildContext context) {
-    final state = AppScope.of(context);
-    final balanceAfter = state.balance - _selected.cost;
-    // Three columns stop fitting whole words once text is enlarged.
-    final stacked =
-        MediaQuery.textScalerOf(context).scale(1) >= 1.3 ||
-        MediaQuery.sizeOf(context).width < 340;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Row(
-          children: [
-            const SizedBox(width: 44),
-            Expanded(
-              child: Text(
-                'Чем угостим Рыжика?',
-                textAlign: TextAlign.center,
-                style: AppTextStyles.sectionTitle.copyWith(
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-            ),
-            _CloseButton(onPressed: () => Navigator.of(context).pop()),
-          ],
-        ),
-        const SizedBox(height: AppSpacing.md),
-        if (stacked)
-          for (final food in FoodType.values) ...[
-            _FoodOption(
-              key: ValueKey('feed_${food.name}'),
-              type: food,
-              horizontal: true,
-              selected: food == _selected,
-              onTap: () => _select(food),
-            ),
-            if (food != FoodType.values.last)
-              const SizedBox(height: AppSpacing.xs),
-          ]
-        else
-          IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                for (final food in FoodType.values) ...[
-                  Expanded(
-                    child: _FoodOption(
-                      key: ValueKey('feed_${food.name}'),
-                      type: food,
-                      selected: food == _selected,
-                      onTap: () => _select(food),
-                    ),
-                  ),
-                  if (food != FoodType.values.last)
-                    const SizedBox(width: AppSpacing.xs),
-                ],
-              ],
-            ),
-          ),
-        const SizedBox(height: AppSpacing.md),
-        Row(
-          children: [
-            const Expanded(child: Divider()),
-            Flexible(
-              flex: 6,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: balanceAfter >= 0
-                      ? Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              'Баланс после покупки: ',
-                              style: AppTextStyles.caption,
-                            ),
-                            Image.asset(
-                              AppAssets.financeCoinSingle,
-                              width: 20,
-                              height: 20,
-                            ),
-                            const SizedBox(width: 3),
-                            Text(
-                              _coins(balanceAfter),
-                              style: AppTextStyles.label.copyWith(fontSize: 16),
-                            ),
-                          ],
-                        )
-                      : Text(
-                          'Не хватает ${_coins(-balanceAfter)} монет',
-                          style: AppTextStyles.caption.copyWith(
-                            color: AppColors.pink,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                ),
-              ),
-            ),
-            const Expanded(child: Divider()),
-          ],
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        if (_pendingFood == null)
-          PrimaryGradientButton(
-            key: const ValueKey('feed_confirm'),
-            label: 'Покормить за ${_selected.cost}',
-            height: 56,
-            maxLines: 2,
-            onPressed: () => _feed(state, _selected),
-          ),
-        if (_insufficientFunds) ...[
-          const SizedBox(height: AppSpacing.md),
-          RoundedSurfaceCard(
-            backgroundColor: AppColors.backgroundLavender,
-            padding: const EdgeInsets.all(AppSpacing.sm),
-            child: Column(
-              children: [
-                Text(
-                  'Сейчас монет не хватает.\nДавай сначала выполним задание!',
-                  textAlign: TextAlign.center,
-                  style: AppTextStyles.body,
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                PrimaryGradientButton(
-                  key: const ValueKey('feed_open_tasks'),
-                  label: 'К заданиям',
-                  height: 52,
-                  onPressed: widget.onOpenTasks,
-                ),
-              ],
-            ),
-          ),
-        ],
-        if (_pendingFood case final food?) ...[
-          RoundedSurfaceCard(
-            backgroundColor: const Color(0xFFFFF3D8),
-            padding: const EdgeInsets.all(AppSpacing.sm),
-            child: Column(
-              children: [
-                Text(
-                  '${food.expenseCategory == ExpenseCategory.essential ? 'На важное' : 'На приятное'} мы планировали '
-                  '${_coins(state.plannedForExpense(food.expenseCategory))} монет.\n'
-                  'Если купить это, получится '
-                  '${_coins(state.spentForExpense(food.expenseCategory) + food.cost)}.\n\n'
-                  'Всё равно купить?',
-                  textAlign: TextAlign.center,
-                  style: AppTextStyles.body,
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextButton(
-                        key: const ValueKey('feed_overrun_cancel'),
-                        onPressed: () => setState(() => _pendingFood = null),
-                        child: const Text('Не сейчас'),
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.xs),
-                    Expanded(
-                      child: PrimaryGradientButton(
-                        key: const ValueKey('feed_overrun_confirm'),
-                        label: 'Купить',
-                        height: 50,
-                        onPressed: () =>
-                            _feed(state, food, confirmPlanOverrun: true),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-
-  void _select(FoodType food) {
-    setState(() {
-      _selected = food;
-      _insufficientFunds = false;
-      _pendingFood = null;
-    });
-  }
-
-  void _feed(
-    AppController state,
-    FoodType food, {
-    bool confirmPlanOverrun = false,
-  }) {
-    final result = state.feedPet(food, confirmPlanOverrun: confirmPlanOverrun);
-    if (result == FeedPetResult.insufficientFunds) {
-      setState(() {
-        _insufficientFunds = true;
-        _pendingFood = null;
-      });
-      return;
-    }
-    if (result == FeedPetResult.requiresConfirmation) {
-      setState(() {
-        _pendingFood = food;
-        _insufficientFunds = false;
-      });
-      return;
-    }
-    Navigator.of(context).pop(food);
-    ScaffoldMessenger.of(context)
-        .showSnackBar(const SnackBar(content: Text('Рыжик сыт и доволен!')));
-  }
-}
-
-class _CloseButton extends StatelessWidget {
-  const _CloseButton({required this.onPressed});
-
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: 'Закрыть',
-      child: InkResponse(
-        key: const ValueKey('sheet_close'),
-        onTap: onPressed,
-        radius: 24,
-        child: const SizedBox.square(
-          dimension: 44,
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: AppColors.backgroundLavender,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.close_rounded,
-              color: AppColors.secondaryText,
-              size: 24,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _FoodOption extends StatelessWidget {
-  const _FoodOption({
-    required this.type,
-    required this.selected,
-    required this.onTap,
-    this.horizontal = false,
-    super.key,
-  });
-
-  final FoodType type;
-  final bool selected;
-  final VoidCallback onTap;
-
-  /// Row layout used when enlarged text needs the full sheet width.
-  final bool horizontal;
-
-  @override
-  Widget build(BuildContext context) {
-    final (label, asset) = switch (type) {
-      FoodType.basic => ('Корм', AppAssets.foodBasicBowl),
-      FoodType.healthy => ('Полезный перекус', AppAssets.foodHealthySnack),
-      FoodType.treat => ('Вкусняшка', AppAssets.foodTreatDessert),
-    };
-
-    return Semantics(
-      selected: selected,
-      button: true,
-      label: '$label, ${type.cost} монет',
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 160),
-        decoration: BoxDecoration(
-          color: selected ? AppColors.primaryBlueLight : AppColors.surface,
-          borderRadius: AppRadii.card,
-          border: Border.all(
-            color: selected ? AppColors.primaryBlue : AppColors.borderLight,
-            width: selected ? 2.5 : 1,
-          ),
-          boxShadow: selected ? AppShadows.primaryControl : AppShadows.card,
-        ),
-        child: Material(
-          color: AppColors.transparent,
-          borderRadius: AppRadii.card,
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: onTap,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(6, 10, 6, 10),
-              child: horizontal
-                  ? Row(
-                      children: [
-                        Image.asset(asset, width: 64, height: 56),
-                        const SizedBox(width: AppSpacing.sm),
-                        Expanded(
-                          child: Text(
-                            label,
-                            style: AppTextStyles.label.copyWith(fontSize: 16),
-                          ),
-                        ),
-                        const SizedBox(width: AppSpacing.xs),
-                        Image.asset(
-                          AppAssets.financeCoinSingle,
-                          width: 22,
-                          height: 22,
-                        ),
-                        const SizedBox(width: 4),
-                        Text('${type.cost}', style: AppTextStyles.label),
-                        const SizedBox(width: 6),
-                      ],
-                    )
-                  : Column(
-                      children: [
-                        AspectRatio(
-                          aspectRatio: 1.15,
-                          child: Image.asset(asset, fit: BoxFit.contain),
-                        ),
-                        const SizedBox(height: 6),
-                        Expanded(
-                          child: Center(
-                            child: Text(
-                              label,
-                              textAlign: TextAlign.center,
-                              style: AppTextStyles.label.copyWith(
-                                fontSize: MediaQuery.sizeOf(context).width < 400
-                                    ? 13
-                                    : 15,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Image.asset(
-                                AppAssets.financeCoinSingle,
-                                width: 22,
-                                height: 22,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                '${type.cost} монет',
-                                style: AppTextStyles.label.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _BudgetRow extends StatelessWidget {
   const _BudgetRow({
     required this.icon,

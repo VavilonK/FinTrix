@@ -77,6 +77,7 @@ flutter:
     - assets/images/objects/tasks/
     - assets/images/objects/goals/
     - assets/images/objects/care/
+    - assets/images/objects/shop/
     - assets/images/minigames/memory/
     - assets/icons/navigation/
 

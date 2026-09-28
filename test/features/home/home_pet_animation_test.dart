@@ -54,7 +54,12 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(ValueKey('feed_${food.name}')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('feed_confirm')));
+    // Unaffordable items show what is missing instead of a buy button.
+    final confirm = find.byKey(const ValueKey('feed_confirm'));
+    if (confirm.evaluate().isEmpty) return;
+    await tester.ensureVisible(confirm);
+    await tester.pumpAndSettle();
+    await tester.tap(confirm);
     await tester.pump();
   }
 
@@ -116,7 +121,8 @@ void main() {
     final coordinator = animation(tester);
     final playId = coordinator.playId;
     await feed(tester, FoodType.treat);
-    expect(find.textContaining('Сейчас монет не хватает'), findsOneWidget);
+    expect(find.byKey(const ValueKey('shop_not_enough')), findsOneWidget);
+    expect(find.textContaining('не хватает 50 монет'), findsOneWidget);
     expect(coordinator.playId, playId);
     expect(coordinator.current, PetAnimationState.happyIdle);
   });
@@ -127,7 +133,7 @@ void main() {
     final playId = coordinator.playId;
     await tester.tap(find.byKey(const ValueKey('home_feed_pet')));
     await tester.pumpAndSettle();
-    Navigator.of(tester.element(find.text('Чем угостим Рыжика?'))).pop();
+    Navigator.of(tester.element(find.text('Что купим?'))).pop();
     await tester.pumpAndSettle();
     expect(coordinator.playId, playId);
   });
@@ -144,7 +150,7 @@ void main() {
     // Feeding is blocked as well while the clip plays.
     await tester.tap(find.byKey(const ValueKey('home_feed_pet')));
     await tester.pumpAndSettle();
-    expect(find.text('Чем угостим Рыжика?'), findsNothing);
+    expect(find.text('Что купим?'), findsNothing);
     await settleClips(tester);
     expect(animation(tester).current, PetAnimationState.happyIdle);
   });

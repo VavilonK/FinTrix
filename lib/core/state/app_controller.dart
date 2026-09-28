@@ -20,6 +20,7 @@ import '../../features/pet_progression/domain/pet_progression.dart';
 import '../../features/pet_progression/domain/pet_progression_policy.dart';
 import '../../features/play/domain/mini_game_models.dart';
 import '../../features/profile/domain/profile_models.dart';
+import '../../features/shop/domain/shop_catalog.dart';
 import '../assets/app_assets.dart';
 import '../storage/app_state_repository.dart';
 import '../storage/app_state_snapshot.dart';
@@ -68,6 +69,18 @@ class AppController extends ChangeNotifier {
 
   static const Duration _hungerInterval = Duration(minutes: 15);
   static const int _satietyLossPerInterval = 3;
+
+  /// Care and mood fade more slowly than satiety; toys in the room slow the
+  /// mood loss further (see ShopCatalog.moodDecayReliefPerRoomItem).
+  static const int _careLossPerInterval = 2;
+  static const int _moodLossPerInterval = 2;
+
+  static const String defaultPetName = 'Рыжик';
+  static const int maximumPetNameLength = 16;
+
+  /// Parent rewards are small, fixed amounts so they support, not replace,
+  /// the child's own decisions.
+  static const List<int> parentRewardAmounts = [20, 50, 100];
 
   final AppStateRepository? _repository;
   final FinancialTransactionStore _financialTransactions;
@@ -127,6 +140,14 @@ class AppController extends ChangeNotifier {
   bool soundEnabled = true;
   bool hintsEnabled = true;
   PetAppearance petAppearance = const PetAppearance();
+  String petName = defaultPetName;
+
+  /// The child has seen the short intro to the game's three decisions.
+  /// Set to false when parent setup finishes, so the intro follows it once.
+  bool tutorialSeen = true;
+
+  /// Room items bought once (ShopItem ids).
+  final Set<String> ownedRoomItems = {};
 
   ParentProfile get parentProfile => _parentProfile;
 
@@ -556,6 +577,141 @@ class AppController extends ChangeNotifier {
     return FeedPetResult.success;
   }
 
+  /// Buys [item] for the pet. Food is fed right away, care items are used
+  /// right away, room items stay in the room. Nothing changes unless the
+  /// result is [ShopPurchaseResult.success].
+  (ShopPurchaseResult, PurchaseReceipt?) buyItem(
+    ShopItem item, {
+    DateTime? now,
+    bool confirmPlanOverrun = false,
+  }) {
+    final actionTime = now ?? DateTime.now();
+    final balanceBefore = balance;
+    final petBefore = petState;
+    if (item.isPermanent && ownedRoomItems.contains(item.id)) {
+      return (ShopPurchaseResult.alreadyOwned, null);
+    }
+    final food = item.food;
+    if (food != null) {
+      final result = feedPet(
+        food,
+        now: actionTime,
+        confirmPlanOverrun: confirmPlanOverrun,
+      );
+      return switch (result) {
+        FeedPetResult.success => (
+          ShopPurchaseResult.success,
+          PurchaseReceipt(
+            item: item,
+            balanceBefore: balanceBefore,
+            balanceAfter: balance,
+            petBefore: petBefore,
+            petAfter: petState,
+          ),
+        ),
+        FeedPetResult.insufficientFunds => (
+          ShopPurchaseResult.insufficientFunds,
+          null,
+        ),
+        FeedPetResult.requiresConfirmation => (
+          ShopPurchaseResult.requiresConfirmation,
+          null,
+        ),
+      };
+    }
+
+    final decayed = _applyHunger(actionTime);
+    final petAfterDecay = petState;
+    if (item.cost > balance) {
+      if (decayed) _notifyAndPersist();
+      return (ShopPurchaseResult.insufficientFunds, null);
+    }
+    if (!confirmPlanOverrun &&
+        wouldExceedBudgetPlan(item.cost, item.category)) {
+      if (decayed) _notifyAndPersist();
+      return (ShopPurchaseResult.requiresConfirmation, null);
+    }
+    final savingsBefore = savings;
+    _recordExpense(item.cost, item.category);
+    _recordFinancialTransaction(
+      type: _expenseTransactionType(item.category),
+      source: FinancialTransactionSource.petCare,
+      title: item.title,
+      description: item.isPermanent ? 'В комнату $petName' : 'Уход за $petName',
+      sourceId: item.id,
+      amount: item.cost,
+      balanceBefore: balanceBefore,
+      balanceAfter: balance,
+      savingsBefore: savingsBefore,
+      savingsAfter: savings,
+      createdAt: actionTime,
+    );
+    petState = petState.copyWith(
+      satiety: petState.satiety + item.satietyGain,
+      mood: petState.mood + item.moodGain,
+      care: petState.care + item.careGain,
+      lastPettedAt: item.careGain > 0 ? actionTime : null,
+    );
+    if (item.isPermanent) ownedRoomItems.add(item.id);
+    _notifyAndPersist();
+    return (
+      ShopPurchaseResult.success,
+      PurchaseReceipt(
+        item: item,
+        balanceBefore: balanceBefore,
+        balanceAfter: balance,
+        petBefore: petAfterDecay,
+        petAfter: petState,
+      ),
+    );
+  }
+
+  /// Coins a parent adds from the protected section, with a short reason.
+  bool awardCoinsFromParent(int amount, String reason, {DateTime? now}) {
+    if (!parentRewardAmounts.contains(amount)) return false;
+    final balanceBefore = balance;
+    balance += amount;
+    _recordPeriodEarning(amount);
+    _recordFinancialTransaction(
+      type: FinancialTransactionType.earning,
+      source: FinancialTransactionSource.parent,
+      title: 'Поощрение от родителя',
+      description: reason,
+      amount: amount,
+      balanceBefore: balanceBefore,
+      balanceAfter: balance,
+      savingsBefore: savings,
+      savingsAfter: savings,
+      createdAt: now,
+    );
+    _notifyAndPersist();
+    return true;
+  }
+
+  bool setPetName(String value) {
+    final normalized = value.trim().replaceAll(RegExp(r'\s+'), ' ');
+    if (normalized.isEmpty || normalized.length > maximumPetNameLength) {
+      return false;
+    }
+    if (normalized == petName) return true;
+    petName = normalized;
+    _notifyAndPersist();
+    return true;
+  }
+
+  /// The intro opens on the next Home visit (after parent setup).
+  void requestTutorial() {
+    if (!tutorialSeen) return;
+    tutorialSeen = false;
+    _notifyAndPersist();
+  }
+
+  void markTutorialSeen() {
+    if (tutorialSeen) return;
+    tutorialSeen = true;
+    _notifyAndPersist();
+  }
+
   void petFox({DateTime? now}) {
     final actionTime = now ?? DateTime.now();
     _applyHunger(actionTime);
@@ -821,10 +977,19 @@ class AppController extends ChangeNotifier {
     final intervals =
         now.difference(_lastHungerCheckAt).inMinutes ~/
         _hungerInterval.inMinutes;
-    if (intervals <= 0 || petState.satiety == 0) return false;
+    if (intervals <= 0) return false;
 
+    final moodRelief =
+        (ownedRoomItems.length * ShopCatalog.moodDecayReliefPerRoomItem).clamp(
+          0.0,
+          0.5,
+        );
     petState = petState.copyWith(
       satiety: petState.satiety - intervals * _satietyLossPerInterval,
+      care: petState.care - intervals * _careLossPerInterval,
+      mood:
+          petState.mood -
+          (intervals * _moodLossPerInterval * (1 - moodRelief)).floor(),
     );
     _lastHungerCheckAt = _lastHungerCheckAt.add(
       Duration(minutes: intervals * _hungerInterval.inMinutes),
@@ -1138,6 +1303,9 @@ class AppController extends ChangeNotifier {
       soundEnabled: soundEnabled,
       hintsEnabled: hintsEnabled,
       petAppearance: petAppearance,
+      petName: petName,
+      tutorialSeen: tutorialSeen,
+      ownedRoomItems: ownedRoomItems.toList(growable: false),
       cachedDailyMission: _cachedDailyMission,
       cachedDailyMissionKey: _cachedDailyMissionKey,
       activeMission: activeMission,
@@ -1189,6 +1357,15 @@ class AppController extends ChangeNotifier {
     soundEnabled = snapshot.soundEnabled;
     hintsEnabled = snapshot.hintsEnabled;
     petAppearance = snapshot.petAppearance;
+    petName = snapshot.petName;
+    tutorialSeen = snapshot.tutorialSeen;
+    ownedRoomItems
+      ..clear()
+      ..addAll(
+        snapshot.ownedRoomItems.where(
+          (id) => ShopCatalog.byId(id)?.isPermanent ?? false,
+        ),
+      );
     _cachedDailyMission = snapshot.cachedDailyMission;
     _cachedDailyMissionKey = snapshot.cachedDailyMissionKey;
     activeMission = snapshot.activeMission;
@@ -1366,6 +1543,8 @@ class AppController extends ChangeNotifier {
     soundEnabled = true;
     hintsEnabled = true;
     petAppearance = const PetAppearance();
+    petName = defaultPetName;
+    ownedRoomItems.clear();
     streak = 4;
     petLevel = 5;
     petXp = 680;

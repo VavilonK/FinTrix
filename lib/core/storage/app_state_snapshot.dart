@@ -30,6 +30,9 @@ class AppStateSnapshot {
     required this.soundEnabled,
     required this.hintsEnabled,
     this.petAppearance = const PetAppearance(),
+    this.petName = 'Рыжик',
+    this.tutorialSeen = false,
+    this.ownedRoomItems = const [],
     required this.cachedDailyMission,
     required this.cachedDailyMissionKey,
     required this.activeMission,
@@ -73,6 +76,9 @@ class AppStateSnapshot {
   final bool soundEnabled;
   final bool hintsEnabled;
   final PetAppearance petAppearance;
+  final String petName;
+  final bool tutorialSeen;
+  final List<String> ownedRoomItems;
   final DailyMission? cachedDailyMission;
   final String? cachedDailyMissionKey;
   final DailyMission? activeMission;
@@ -119,6 +125,9 @@ class AppStateSnapshot {
     'soundEnabled': soundEnabled,
     'hintsEnabled': hintsEnabled,
     'petAppearance': petAppearance.toJson(),
+    'petName': petName,
+    'tutorialSeen': tutorialSeen,
+    'ownedRoomItems': ownedRoomItems,
     'cachedDailyMission': cachedDailyMission == null
         ? null
         : AppStateSerializers.dailyMissionToJson(cachedDailyMission!),
@@ -201,6 +210,21 @@ class AppStateSnapshot {
       hintsEnabled: _bool(json, 'hintsEnabled'),
       // Absent in saves from before pet customisation: default look.
       petAppearance: PetAppearance.fromJson(json['petAppearance']),
+      // Fields added after schema 7 are optional: older saves keep defaults
+      // (an existing player is not shown the intro again).
+      petName:
+          json['petName'] is String && (json['petName'] as String).isNotEmpty
+          ? json['petName'] as String
+          : 'Рыжик',
+      tutorialSeen: json['tutorialSeen'] is bool
+          ? json['tutorialSeen'] as bool
+          : true,
+      ownedRoomItems: json['ownedRoomItems'] is List
+          ? [
+              for (final id in json['ownedRoomItems'] as List)
+                if (id is String) id,
+            ]
+          : const [],
       cachedDailyMission: _nullableMap(json['cachedDailyMission']) == null
           ? null
           : AppStateSerializers.dailyMissionFromJson(

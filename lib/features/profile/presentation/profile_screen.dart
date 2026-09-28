@@ -92,7 +92,10 @@ class ProfileScreen extends StatelessWidget {
                         children: [
                           _FoxProfileHero(appState: appState),
                           const SizedBox(height: AppSpacing.md),
-                          _AppearanceCard(appState: appState),
+                          SizedBox(
+                            width: double.infinity,
+                            child: _AppearanceCard(appState: appState),
+                          ),
                           const SizedBox(height: AppSpacing.md),
                           Text(
                             'Наши успехи',
@@ -210,7 +213,7 @@ class _FoxProfileHero extends StatelessWidget {
             child: Column(
               children: [
                 Text(
-                  'Рыжик',
+                  appState.petName,
                   style: AppTextStyles.heading.copyWith(
                     fontSize: 32,
                     fontWeight: FontWeight.w900,
@@ -405,7 +408,10 @@ class _GrowthCard extends StatelessWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Как растёт Рыжик', style: AppTextStyles.cardTitle),
+                Text(
+                  'Как растёт ${appState.petName}',
+                  style: AppTextStyles.cardTitle,
+                ),
                 Text(
                   stage.title,
                   style: AppTextStyles.caption.copyWith(
@@ -419,7 +425,7 @@ class _GrowthCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    'Как растёт Рыжик',
+                    'Как растёт ${appState.petName}',
                     style: AppTextStyles.cardTitle.copyWith(
                       fontWeight: FontWeight.w900,
                     ),
@@ -707,7 +713,7 @@ class _AppearanceCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Внешний вид Рыжика',
+            'Внешний вид: ${appState.petName}',
             style: AppTextStyles.cardTitle.copyWith(
               fontWeight: FontWeight.w900,
             ),

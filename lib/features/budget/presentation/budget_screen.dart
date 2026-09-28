@@ -113,6 +113,21 @@ class BudgetScreen extends StatelessWidget {
                               style: AppTextStyles.sectionTitle,
                             ),
                           ),
+                          if (appState.hintsEnabled)
+                            Padding(
+                              key: const ValueKey('budget_hint'),
+                              padding: const EdgeInsets.fromLTRB(
+                                AppSpacing.xs,
+                                2,
+                                AppSpacing.xs,
+                                0,
+                              ),
+                              child: Text(
+                                'Раздели все монеты: сначала на важное, потом '
+                                'на мечту и приятное. Нажми «+» или «−».',
+                                style: AppTextStyles.caption,
+                              ),
+                            ),
                           const SizedBox(height: AppSpacing.xs),
                           _AllocationSummary(appState: appState),
                           const SizedBox(height: AppSpacing.sm),

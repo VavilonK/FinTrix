@@ -7,7 +7,14 @@ enum FinancialTransactionType {
   goalPurchase,
 }
 
-enum FinancialTransactionSource { mission, petCare, miniGame, savings, system }
+enum FinancialTransactionSource {
+  mission,
+  petCare,
+  miniGame,
+  savings,
+  system,
+  parent,
+}
 
 class FinancialTransaction {
   FinancialTransaction({

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../../core/assets/app_assets.dart';
@@ -15,6 +17,9 @@ import 'widgets/home_sheets.dart';
 import 'widgets/home_task_card.dart';
 import 'widgets/pet_actions.dart';
 import 'widgets/pet_stage.dart';
+import 'widgets/room_background.dart';
+import 'pet_messages.dart';
+import '../../shop/presentation/shop_sheet.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
@@ -38,6 +43,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   bool _isPetting = false;
   int _pettingSequence = 0;
   PetAnimationCoordinator? _animation;
+
+  /// The pet's reply to the last purchase, shown for a few seconds.
+  String? _reaction;
+  Timer? _reactionTimer;
 
   /// Measured free space above the pet scene (non-scrolling layout only).
   double _headroom = AppSpacing.sm;
@@ -94,6 +103,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _animation?.dispose();
+    _reactionTimer?.cancel();
     super.dispose();
   }
 
@@ -113,26 +123,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         ? (_pettingSequence.isEven
               ? 'Спасибо за заботу!'
               : 'Мне очень приятно!')
-        : hungry
-        ? (_pettingSequence.isEven
-              ? 'Кажется, я проголодался...'
-              : 'Может, перекусим?')
-        : 'Финансовые приключения вместе!';
+        : _reaction ?? PetMessages.forState(appState);
 
     return Stack(
       fit: StackFit.expand,
       children: [
-        Transform.translate(
-          offset: const Offset(0, 20),
-          child: Transform.scale(
-            scale: 1.06,
-            child: Image.asset(
-              AppAssets.backgroundBedroomDay,
-              fit: BoxFit.cover,
-              alignment: Alignment.topCenter,
-            ),
-          ),
-        ),
+        RoomBackground(ownedItems: appState.ownedRoomItems),
         const DecoratedBox(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -282,17 +278,39 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   Future<void> _feedFox() async {
     // One pet action at a time: a tap during a clip is ignored, not queued.
     if (_animation!.isActionPlaying) return;
-    final food = await showFeedPetSheet(
+    final receipt = await showShopSheet(
       context: context,
       onOpenTasks: widget.onOpenTasks,
     );
-    if (food == null || !mounted) return;
-    // Coins and satiety already changed inside AppController.feedPet; the
+    if (receipt == null || !mounted) return;
+    // Coins and pet stats already changed inside AppController.buyItem; the
     // clip only presents that result, starting from the pose on screen.
-    _animation!.playFeed(
-      food,
-      after: PetBaseState.of(AppScope.of(context).petState),
-    );
+    final food = receipt.item.food;
+    if (food != null) {
+      _animation!.playFeed(
+        food,
+        after: PetBaseState.of(AppScope.of(context).petState),
+      );
+    } else if (receipt.item.careGain > 0) {
+      _animation!.playPet();
+    }
+    _showReaction(PetMessages.reactionTo(receipt));
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          key: const ValueKey('purchase_feedback'),
+          content: Text(PetMessages.summaryOf(receipt)),
+        ),
+      );
+  }
+
+  void _showReaction(String text) {
+    _reactionTimer?.cancel();
+    setState(() => _reaction = text);
+    _reactionTimer = Timer(const Duration(seconds: 6), () {
+      if (mounted) setState(() => _reaction = null);
+    });
   }
 
   Future<void> _petFox() async {
