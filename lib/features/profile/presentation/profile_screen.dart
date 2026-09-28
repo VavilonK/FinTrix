@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
 
+import '../../home/presentation/pet_animation/pet_look_still.dart';
+
+import '../../home/presentation/pet_animation/pet_look.dart';
+
+import '../../pet_progression/domain/pet_appearance.dart';
+
 import '../../../core/assets/app_assets.dart';
 import '../../../core/state/app_controller.dart';
 import '../../../core/state/app_scope.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radii.dart';
+import '../../../core/theme/app_shadows.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/widgets/account_header.dart';
@@ -84,6 +91,8 @@ class ProfileScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _FoxProfileHero(appState: appState),
+                          const SizedBox(height: AppSpacing.md),
+                          _AppearanceCard(appState: appState),
                           const SizedBox(height: AppSpacing.md),
                           Text(
                             'Наши успехи',
@@ -170,15 +179,23 @@ class _FoxProfileHero extends StatelessWidget {
                     size: 42,
                   ),
                 ),
-                Image.asset(
-                  PetVisualResolver.assetFor(
-                    stage: appState.petGrowthStage,
-                    emotionalState: PetEmotionalState.happy,
-                    context: PetVisualContext.profile,
+                SizedBox.square(
+                  dimension: 270,
+                  child: PetLookStill(
+                    key: const ValueKey('profile_pet_look'),
+                    stillAsset: PetVisualResolver.animationSetFor(
+                      appState.petGrowthStage,
+                    ).happyStill,
+                    idleAsset: PetVisualResolver.animationSetFor(
+                      appState.petGrowthStage,
+                    ).happyIdle,
+                    appearance: appState.petAppearance,
+                    fallbackAsset: PetVisualResolver.assetFor(
+                      stage: appState.petGrowthStage,
+                      emotionalState: PetEmotionalState.happy,
+                      context: PetVisualContext.profile,
+                    ),
                   ),
-                  width: 235,
-                  height: 225,
-                  fit: BoxFit.contain,
                 ),
               ],
             ),
@@ -665,4 +682,206 @@ String _formatNumber(int value) {
     RegExp(r'\B(?=(\d{3})+(?!\d))'),
     (_) => ' ',
   );
+}
+
+/// Hoodie colour and accessories; changes apply to Home and Profile at once.
+class _AppearanceCard extends StatelessWidget {
+  const _AppearanceCard({required this.appState});
+
+  final AppController appState;
+
+  static const _swatches = {
+    HoodieColor.blue: Color(0xFF2F5BE0),
+    HoodieColor.red: Color(0xFFD7263D),
+    HoodieColor.green: Color(0xFF1E9E5A),
+    HoodieColor.purple: Color(0xFF8A3FD1),
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final look = appState.petAppearance;
+    return RoundedSurfaceCard(
+      key: const ValueKey('pet_appearance_card'),
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Внешний вид Рыжика',
+            style: AppTextStyles.cardTitle.copyWith(
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text('Худи', style: AppTextStyles.label),
+          const SizedBox(height: AppSpacing.xs),
+          Wrap(
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.xs,
+            children: [
+              for (final color in HoodieColor.values)
+                _HoodieSwatch(
+                  key: ValueKey('hoodie_${color.name}'),
+                  color: _swatches[color]!,
+                  label: color.title,
+                  selected: look.hoodie == color,
+                  onTap: () =>
+                      appState.setPetAppearance(look.copyWith(hoodie: color)),
+                ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Text('Аксессуары', style: AppTextStyles.label),
+          const SizedBox(height: AppSpacing.xs),
+          Wrap(
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.xs,
+            children: [
+              for (final accessory in PetAccessory.values)
+                _AccessoryChip(
+                  key: ValueKey('accessory_${accessory.name}'),
+                  asset: PetAccessorySpec.of(accessory).asset,
+                  label: accessory.title,
+                  selected: look.has(accessory),
+                  onTap: () =>
+                      appState.setPetAppearance(look.toggle(accessory)),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HoodieSwatch extends StatelessWidget {
+  const _HoodieSwatch({
+    required this.color,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+    super.key,
+  });
+
+  final Color color;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: 'Худи: $label',
+      child: InkResponse(
+        onTap: onTap,
+        radius: 30,
+        child: SizedBox(
+          width: 64,
+          child: Column(
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 160),
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: color,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: selected ? AppColors.navy : AppColors.surface,
+                    width: selected ? 3 : 2,
+                  ),
+                  boxShadow: AppShadows.card,
+                ),
+                child: selected
+                    ? const Icon(Icons.check_rounded, color: AppColors.surface)
+                    : null,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTextStyles.caption.copyWith(
+                  color: AppColors.navy,
+                  fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AccessoryChip extends StatelessWidget {
+  const _AccessoryChip({
+    required this.asset,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+    super.key,
+  });
+
+  final String asset;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      toggled: selected,
+      label: label,
+      child: Material(
+        color: selected ? AppColors.primaryBlueLight : AppColors.surfaceSoft,
+        shape: RoundedRectangleBorder(
+          borderRadius: AppRadii.card,
+          side: BorderSide(
+            color: selected ? AppColors.primaryBlue : AppColors.borderLight,
+            width: selected ? 2 : 1,
+          ),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 56, minWidth: 128),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm,
+                vertical: AppSpacing.xs,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Image.asset(
+                    asset,
+                    width: 44,
+                    height: 32,
+                    fit: BoxFit.contain,
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                  Text(label, style: AppTextStyles.label),
+                  const SizedBox(width: AppSpacing.xs),
+                  Icon(
+                    selected
+                        ? Icons.check_circle_rounded
+                        : Icons.add_circle_outline_rounded,
+                    color: selected
+                        ? AppColors.primaryBlue
+                        : AppColors.secondaryText,
+                    size: 20,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

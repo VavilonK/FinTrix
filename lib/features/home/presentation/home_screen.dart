@@ -229,6 +229,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     PetStage(
                       height: stageHeight,
                       headroom: needsScroll ? AppSpacing.sm : _headroom,
+                      appearance: appState.petAppearance,
                       isActive: widget.isActive,
                       animation: _animation!,
                       mood: pet.mood,

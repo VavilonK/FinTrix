@@ -4,9 +4,12 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
+import '../../../pet_progression/domain/pet_appearance.dart';
 import 'pet_animation_coordinator.dart';
 import 'pet_animation_models.dart';
 import 'pet_clip_cache.dart';
+import 'pet_look.dart';
+import 'pet_look_still.dart';
 
 /// Draws whatever [PetAnimationCoordinator] selects inside PetStage's bounds.
 ///
@@ -20,6 +23,7 @@ class PetAnimationViewport extends StatefulWidget {
     required this.fallbackAsset,
     required this.isActive,
     this.minTop = earClearance,
+    this.appearance = const PetAppearance(),
     super.key,
   });
 
@@ -33,6 +37,10 @@ class PetAnimationViewport extends StatefulWidget {
   /// ears may reach before older stages stop growing, so they never cover
   /// the card above the scene.
   final double minTop;
+
+  /// Hoodie colour and accessories. The default look takes the plain path:
+  /// clip frames are drawn exactly as decoded.
+  final PetAppearance appearance;
 
   /// Idle frames advance this much faster while an action waits for the idle
   /// loop to come back to its anchor pose.
@@ -93,6 +101,17 @@ class _PetAnimationViewportState extends State<PetAnimationViewport>
   bool _visible = true;
   final Set<String> _failedAssets = {};
 
+  // Look layers (only used when the appearance is not the default one).
+  // The hoodie-mask session advances in lockstep with [_session].
+  PetClipSession? _maskSession;
+  ui.Image? _maskImage;
+  final Map<String, Future<PetPose?>> _poseLoads = {};
+  final Map<String, PetPose?> _poses = {};
+  List<PetAccessoryArt> _arts = const [];
+  Set<PetAccessory>? _artsFor;
+
+  bool get _needsMask => widget.appearance.hoodie != HoodieColor.blue;
+
   PetAnimationCoordinator get _coordinator => widget.coordinator;
 
   bool get _playing => widget.isActive && _foreground && _visible;
@@ -128,6 +147,16 @@ class _PetAnimationViewportState extends State<PetAnimationViewport>
       oldWidget.coordinator.removeListener(_reconcile);
       widget.coordinator.addListener(_reconcile);
     }
+    if (oldWidget.appearance.hoodie != widget.appearance.hoodie) {
+      // Masks must stay frame-aligned with the clip: restart the clip with
+      // (or without) its mask. Appearance changes happen in Profile, while
+      // Home is not on screen.
+      final definition = _sessionDefinition;
+      final playId = _sessionPlayId;
+      if (definition != null && playId != null && _loadingPlayId == null) {
+        _switchTo(definition, playId);
+      }
+    }
     _reconcile();
   }
 
@@ -146,6 +175,8 @@ class _PetAnimationViewportState extends State<PetAnimationViewport>
     _frameTimer?.cancel();
     _session?.dispose();
     _image?.dispose();
+    _maskSession?.dispose();
+    _maskImage?.dispose();
     _cache?.dispose();
     super.dispose();
   }
@@ -163,8 +194,12 @@ class _PetAnimationViewportState extends State<PetAnimationViewport>
       return;
     }
     cache.retain({
-      for (final definition in _coordinator.preloadSet) definition.asset,
+      for (final definition in _coordinator.preloadSet) ...[
+        definition.asset,
+        if (_needsMask) PetLookAssets.hoodieMaskFor(definition.asset),
+      ],
     });
+    _loadLookData();
 
     final wanted = _coordinator.currentDefinition;
     final playId = _coordinator.playId;
@@ -214,10 +249,26 @@ class _PetAnimationViewportState extends State<PetAnimationViewport>
     _catchUpStartedAt = null;
     _loadingPlayId = playId;
     final asset = definition.asset;
-    _cache!.take(asset).then((session) {
+    final withMask = _needsMask;
+    Future.wait<PetClipSession?>([
+      _cache!.take(asset),
+      withMask
+          ? _cache!.take(PetLookAssets.hoodieMaskFor(asset))
+          : Future<PetClipSession?>.value(),
+    ]).then((sessions) {
+      final session = sessions[0];
+      var mask = sessions[1];
       if (!mounted || playId != _coordinator.playId) {
         session?.dispose();
+        mask?.dispose();
         return;
+      }
+      // A mask that does not match the clip frame for frame is dropped: the
+      // hoodie then keeps its drawn colour instead of drifting.
+      if (mask != null &&
+          (session == null || mask.frameCount != session.frameCount)) {
+        mask.dispose();
+        mask = null;
       }
       if (_loadingPlayId == playId) _loadingPlayId = null;
       if (session == null) {
@@ -228,11 +279,14 @@ class _PetAnimationViewportState extends State<PetAnimationViewport>
       }
       _cancelTick();
       final previous = _session;
+      final previousMask = _maskSession;
       _session = session;
+      _maskSession = mask;
       _sessionDefinition = definition;
       _sessionPlayId = playId;
-      _setImage(session.image);
+      _setImage(session.image, mask?.image);
       if (previous != null) _cache!.recycle(previous);
+      if (previousMask != null) _cache!.recycle(previousMask);
       if (!definition.loops) _coordinator.actionStarted(playId);
       _ensureTicking();
     });
@@ -267,11 +321,15 @@ class _PetAnimationViewportState extends State<PetAnimationViewport>
       return;
     }
     final next = session.prefetch();
+    final maskSession = _maskSession;
+    final nextMask = maskSession?.prefetch();
     late final Timer tick;
     tick = _frameTimer = Timer(due, () async {
       final ui.FrameInfo frame;
+      ui.FrameInfo? maskFrame;
       try {
         frame = await next;
+        if (nextMask != null) maskFrame = await nextMask;
       } catch (_) {
         return;
       }
@@ -291,15 +349,51 @@ class _PetAnimationViewportState extends State<PetAnimationViewport>
         return;
       }
       session.advance(frame);
-      _setImage(session.image);
+      if (maskFrame != null && maskSession == _maskSession) {
+        maskSession!.advance(maskFrame);
+      }
+      _setImage(session.image, _maskSession?.image);
       _ensureTicking();
     });
   }
 
-  void _setImage(ui.Image image) {
+  void _setImage(ui.Image image, [ui.Image? mask]) {
     final previous = _image;
-    setState(() => _image = image.clone());
+    final previousMask = _maskImage;
+    setState(() {
+      _image = image.clone();
+      _maskImage = mask?.clone();
+    });
     previous?.dispose();
+    previousMask?.dispose();
+  }
+
+  /// Poses of the clips that may play next, and the accessory artwork.
+  void _loadLookData() {
+    final appearance = widget.appearance;
+    if (appearance.accessories.isEmpty) return;
+    final bundle = DefaultAssetBundle.of(context);
+    for (final definition in _coordinator.preloadSet) {
+      final asset = definition.asset;
+      _poseLoads.putIfAbsent(asset, () {
+        final load = PetPose.load(bundle, PetLookAssets.poseFor(asset));
+        load.then((pose) {
+          if (mounted) setState(() => _poses[asset] = pose);
+        });
+        return load;
+      });
+    }
+    if (_artsFor == null ||
+        !(_artsFor!.length == appearance.accessories.length &&
+            _artsFor!.containsAll(appearance.accessories))) {
+      final wanted = {...appearance.accessories};
+      _artsFor = wanted;
+      PetAccessoryLoader.load(bundle, wanted).then((arts) {
+        if (mounted && identical(_artsFor, wanted)) {
+          setState(() => _arts = arts);
+        }
+      });
+    }
   }
 
   void _showStill() {
@@ -317,20 +411,49 @@ class _PetAnimationViewportState extends State<PetAnimationViewport>
     final session = _session;
     _session = null;
     if (session != null) _cache?.recycle(session);
+    final mask = _maskSession;
+    _maskSession = null;
+    if (mask != null) _cache?.recycle(mask);
     final image = _image;
     _image = null;
     image?.dispose();
+    final maskImage = _maskImage;
+    _maskImage = null;
+    maskImage?.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final image = _image;
+    final appearance = widget.appearance;
     final Widget content;
-    if (image != null && _coordinator.animationsEnabled) {
+    if (image != null &&
+        _coordinator.animationsEnabled &&
+        !appearance.isDefault) {
+      final session = _session;
+      content = CustomPaint(
+        key: const ValueKey('pet_animation_frame'),
+        painter: PetLookPainter(
+          frame: image,
+          frameIndex: session?.index ?? 0,
+          hoodieMask: _maskImage,
+          hoodieMatrix: HoodiePalette.matrixFor(appearance.hoodie),
+          pose: _poses[_sessionDefinition?.asset],
+          accessories: appearance.accessories.isEmpty ? const [] : _arts,
+        ),
+      );
+    } else if (image != null && _coordinator.animationsEnabled) {
       content = RawImage(
         key: const ValueKey('pet_animation_frame'),
         image: image,
         fit: BoxFit.contain,
+      );
+    } else if (!appearance.isDefault) {
+      content = PetLookStill(
+        stillAsset: _stillAsset,
+        idleAsset: _stillIdleAsset,
+        appearance: appearance,
+        fallbackAsset: widget.fallbackAsset,
       );
     } else {
       content = Image.asset(
@@ -379,4 +502,8 @@ class _PetAnimationViewportState extends State<PetAnimationViewport>
   String get _stillAsset => _coordinator.animationsEnabled
       ? (_sessionDefinition ?? _coordinator.currentDefinition).stillAsset
       : _coordinator.stillAsset;
+
+  String get _stillIdleAsset => _coordinator.animationsEnabled
+      ? (_sessionDefinition ?? _coordinator.currentDefinition).stillIdleAsset
+      : _coordinator.stillIdleAsset;
 }

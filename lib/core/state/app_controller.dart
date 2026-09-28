@@ -15,6 +15,7 @@ import '../../features/missions/data/daily_mission_generator.dart';
 import '../../features/missions/domain/mission_models.dart';
 import '../../features/periods/data/demo_period_definitions.dart';
 import '../../features/periods/domain/game_period.dart';
+import '../../features/pet_progression/domain/pet_appearance.dart';
 import '../../features/pet_progression/domain/pet_progression.dart';
 import '../../features/pet_progression/domain/pet_progression_policy.dart';
 import '../../features/play/domain/mini_game_models.dart';
@@ -125,6 +126,7 @@ class AppController extends ChangeNotifier {
   BudgetUsage budgetUsage = const BudgetUsage();
   bool soundEnabled = true;
   bool hintsEnabled = true;
+  PetAppearance petAppearance = const PetAppearance();
 
   ParentProfile get parentProfile => _parentProfile;
 
@@ -608,6 +610,13 @@ class AppController extends ChangeNotifier {
   void setSoundEnabled(bool value) {
     if (soundEnabled == value) return;
     soundEnabled = value;
+    _notifyAndPersist();
+  }
+
+  /// Visual only: hoodie colour and accessories chosen in Profile.
+  void setPetAppearance(PetAppearance value) {
+    if (petAppearance == value) return;
+    petAppearance = value;
     _notifyAndPersist();
   }
 
@@ -1128,6 +1137,7 @@ class AppController extends ChangeNotifier {
       streak: streak,
       soundEnabled: soundEnabled,
       hintsEnabled: hintsEnabled,
+      petAppearance: petAppearance,
       cachedDailyMission: _cachedDailyMission,
       cachedDailyMissionKey: _cachedDailyMissionKey,
       activeMission: activeMission,
@@ -1178,6 +1188,7 @@ class AppController extends ChangeNotifier {
     streak = snapshot.streak.clamp(0, 1 << 31).toInt();
     soundEnabled = snapshot.soundEnabled;
     hintsEnabled = snapshot.hintsEnabled;
+    petAppearance = snapshot.petAppearance;
     _cachedDailyMission = snapshot.cachedDailyMission;
     _cachedDailyMissionKey = snapshot.cachedDailyMissionKey;
     activeMission = snapshot.activeMission;
@@ -1354,6 +1365,7 @@ class AppController extends ChangeNotifier {
     _lastHungerCheckAt = resetAt;
     soundEnabled = true;
     hintsEnabled = true;
+    petAppearance = const PetAppearance();
     streak = 4;
     petLevel = 5;
     petXp = 680;

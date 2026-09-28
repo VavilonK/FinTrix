@@ -1,0 +1,5 @@
+numpy>=2.0
+opencv-python>=4.10
+pillow>=10
+scipy>=1.13
+# плюс ffmpeg в системе (с libx264 и libvpx-vp9) — только для сборки MP4/WebM в render.sh

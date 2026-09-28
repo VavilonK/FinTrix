@@ -5,6 +5,7 @@ import '../../features/missions/domain/mission_models.dart';
 import '../../features/periods/domain/game_period.dart';
 import '../../features/profile/domain/profile_models.dart';
 import 'serializers/app_state_serializers.dart';
+import '../../features/pet_progression/domain/pet_appearance.dart';
 
 class AppStateSnapshot {
   const AppStateSnapshot({
@@ -28,6 +29,7 @@ class AppStateSnapshot {
     required this.streak,
     required this.soundEnabled,
     required this.hintsEnabled,
+    this.petAppearance = const PetAppearance(),
     required this.cachedDailyMission,
     required this.cachedDailyMissionKey,
     required this.activeMission,
@@ -70,6 +72,7 @@ class AppStateSnapshot {
   final int streak;
   final bool soundEnabled;
   final bool hintsEnabled;
+  final PetAppearance petAppearance;
   final DailyMission? cachedDailyMission;
   final String? cachedDailyMissionKey;
   final DailyMission? activeMission;
@@ -115,6 +118,7 @@ class AppStateSnapshot {
     'streak': streak,
     'soundEnabled': soundEnabled,
     'hintsEnabled': hintsEnabled,
+    'petAppearance': petAppearance.toJson(),
     'cachedDailyMission': cachedDailyMission == null
         ? null
         : AppStateSerializers.dailyMissionToJson(cachedDailyMission!),
@@ -195,6 +199,8 @@ class AppStateSnapshot {
       streak: _int(json, 'streak'),
       soundEnabled: _bool(json, 'soundEnabled'),
       hintsEnabled: _bool(json, 'hintsEnabled'),
+      // Absent in saves from before pet customisation: default look.
+      petAppearance: PetAppearance.fromJson(json['petAppearance']),
       cachedDailyMission: _nullableMap(json['cachedDailyMission']) == null
           ? null
           : AppStateSerializers.dailyMissionFromJson(

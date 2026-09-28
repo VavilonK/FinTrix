@@ -53,6 +53,11 @@ class PetAnimationCoordinator extends ChangeNotifier {
   String get stillAsset =>
       PetAnimationCatalog.setFor(_growthStage).stillFor(_baseState);
 
+  /// The idle loop whose first frame is [stillAsset].
+  String get stillIdleAsset =>
+      PetAnimationCatalog.setFor(_growthStage)
+          .assetFor(PetAnimationCatalog.idleFor(_baseState));
+
   /// Changes whenever a clip should start from its first frame.
   int get playId => _playId;
   bool get isActionPlaying => !_current.isIdle;

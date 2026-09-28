@@ -83,6 +83,12 @@ abstract final class AppAssets {
   static const String foxStage3HungryStill =
       'assets/animations/fox/runtime/v3/fox_hungry_still.webp';
 
+  // Pet customisation accessories (placed on the tracked pupils).
+  static const String accessoryGlasses =
+      'assets/images/characters/accessories/glasses.png';
+  static const String accessoryBow =
+      'assets/images/characters/accessories/bow.png';
+
   // Stage artwork outside Home (Profile, summaries).
   static const String foxHappyLevel2 =
       'assets/images/characters/fox/Fox_Happy_LVL2.png';

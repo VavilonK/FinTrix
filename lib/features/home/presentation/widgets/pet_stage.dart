@@ -7,6 +7,7 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_progress_bar.dart';
 import '../../../../core/widgets/speech_bubble.dart';
+import '../../../pet_progression/domain/pet_appearance.dart';
 import '../pet_animation/pet_animation_coordinator.dart';
 import '../pet_animation/pet_animation_viewport.dart';
 
@@ -21,6 +22,7 @@ class PetStage extends StatelessWidget {
     required this.animation,
     this.isActive = true,
     this.headroom = 12,
+    this.appearance = const PetAppearance(),
     super.key,
   });
 
@@ -35,6 +37,7 @@ class PetStage extends StatelessWidget {
 
   /// Free space between the scene and the widget above it.
   final double headroom;
+  final PetAppearance appearance;
 
   @override
   Widget build(BuildContext context) {
@@ -65,6 +68,7 @@ class PetStage extends StatelessWidget {
                   isActive: isActive,
                   // The viewport starts 32px above the scene; keep 4px clear.
                   minTop: 32 + 4 - headroom,
+                  appearance: appearance,
                 ),
               ),
               Positioned(

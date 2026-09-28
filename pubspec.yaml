@@ -68,6 +68,7 @@ flutter:
     - assets/animations/fox/runtime/v2/
     - assets/animations/fox/runtime/v3/
     - assets/images/characters/fox/
+    - assets/images/characters/accessories/
     - assets/images/characters/avatars/
     - assets/images/backgrounds/
     - assets/images/locations/

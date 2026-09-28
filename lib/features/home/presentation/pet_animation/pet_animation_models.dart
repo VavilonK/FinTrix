@@ -170,6 +170,11 @@ class PetAnimationDefinition {
   final Duration anchorWindow;
   final PetStageVisualConfig visual;
 
+  /// The idle loop whose first frame is [stillAsset].
+  String get stillIdleAsset =>
+      PetAnimationCatalog.setFor(stage)
+          .assetFor(PetAnimationCatalog.idleFor(startState));
+
   Duration get duration => state.duration;
   bool get loops => state.loops;
   PetBaseState get startState => state.startState;
