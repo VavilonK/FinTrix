@@ -10,7 +10,7 @@
 | Номер сборки (versionCode) | 1 |
 | Платформа | Android 7.0+ (minSdk 24), targetSdk 36; проверено на Android 8.0+ по ТЗ |
 | Стек | Flutter 3.47.4 (stable), Dart 3.13.3, SQLite (sqflite) |
-| Репозиторий | https://github.com/VavilonK/Hackathon |
+| Репозиторий | https://github.com/VavilonK/FinTrix |
 | Сборка | `build/app/outputs/flutter-apk/app-release.apk` (подписанный релизный APK), `app-release.aab` |
 
 Версия и номер сборки задаются одной строкой в `pubspec.yaml` (`version: 1.0.0+1`: до «+» — versionName, после — versionCode). Для каждой новой сдачи номер сборки увеличивается на 1.
@@ -60,8 +60,8 @@
 ### 2.2. Отладочный запуск
 
 ```bash
-git clone https://github.com/VavilonK/Hackathon.git
-cd Hackathon
+git clone https://github.com/VavilonK/FinTrix.git
+cd FinTrix
 flutter pub get
 flutter run
 ```

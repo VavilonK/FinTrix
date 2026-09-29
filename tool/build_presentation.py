@@ -324,7 +324,7 @@ def build():
     # 11. Links
     slide = base(prs, 'Ссылки', 11)
     bullets(slide, 1.3, 3.2, 30, 12, [
-        'Репозиторий:|https://github.com/VavilonK/Hackathon (тег v1.0.0)',
+        'Репозиторий:|https://github.com/VavilonK/FinTrix (тег v1.0.0)',
         'Сборка:|app-release.apk, версия 1.0.0, сборка 1, пакет ru.financepet.ryzhik',
         'Документация:|README.md и docs/Документация_Финансовый_питомец.docx',
         'Карточка RuStore:|docs/rustore/',

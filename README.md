@@ -47,8 +47,8 @@ adb install app-release.apk
 **Из исходников**
 
 ```bash
-git clone https://github.com/VavilonK/Hackathon.git
-cd Hackathon
+git clone https://github.com/VavilonK/FinTrix.git
+cd FinTrix
 flutter pub get
 flutter run
 ```
