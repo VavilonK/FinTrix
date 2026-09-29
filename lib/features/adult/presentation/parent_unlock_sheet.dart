@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/state/app_controller.dart';
 import '../../../core/state/app_scope.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/widgets/app_modal_sheet.dart';
 import '../../../core/widgets/primary_gradient_button.dart';
+import '../domain/parent_access_service.dart';
 
 Future<bool> showParentUnlockSheet(BuildContext context) async {
   final result = await showAppModalSheet<bool>(
@@ -24,20 +26,65 @@ class ParentUnlockSheet extends StatefulWidget {
 
 class _ParentUnlockSheetState extends State<ParentUnlockSheet> {
   final _pinController = TextEditingController();
+  final _repeatController = TextEditingController();
   bool _busy = false;
   bool _biometricAvailable = false;
+  bool _checked = false;
+
+  /// No stored PIN (e.g. data restored from a backup): the parent sets a new
+  /// one here instead of being locked out.
+  bool _needsNewPin = false;
   String? _error;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    if (_checked) return;
+    _checked = true;
     _checkBiometrics();
+    _checkPin();
   }
 
   @override
   void dispose() {
     _pinController.dispose();
+    _repeatController.dispose();
     super.dispose();
+  }
+
+  Future<void> _checkPin() async {
+    final state = AppScope.of(context);
+    final hasPin = await state.hasParentPin();
+    if (mounted && !hasPin && !state.isDemoMode) {
+      setState(() => _needsNewPin = true);
+    }
+  }
+
+  Future<void> _createPin() async {
+    if (_busy) return;
+    final pin = _pinController.text;
+    if (!ParentAccessService.isValidPinFormat(pin)) {
+      setState(() => _error = 'PIN — от 4 до 6 цифр.');
+      return;
+    }
+    if (pin != _repeatController.text) {
+      setState(() => _error = 'PIN не совпадают. Введите ещё раз.');
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    final saved = await AppScope.of(context).createParentPin(pin);
+    if (!mounted) return;
+    if (saved) {
+      Navigator.of(context).pop(true);
+      return;
+    }
+    setState(() {
+      _busy = false;
+      _error = 'Не удалось сохранить PIN. Попробуйте ещё раз.';
+    });
   }
 
   Future<void> _checkBiometrics() async {
@@ -88,6 +135,7 @@ class _ParentUnlockSheetState extends State<ParentUnlockSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final demo = AppScope.of(context).isDemoMode;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -105,10 +153,22 @@ class _ParentUnlockSheetState extends State<ParentUnlockSheet> {
         ),
         const SizedBox(height: AppSpacing.xs),
         Text(
-          'Введите PIN',
+          _needsNewPin
+              ? 'Родительский PIN не найден на устройстве. '
+                    'Придумайте новый PIN из 4–6 цифр.'
+              : 'Введите PIN',
           textAlign: TextAlign.center,
           style: AppTextStyles.bodySecondary,
         ),
+        if (demo) ...[
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'Демо-режим: PIN ${AppController.demoParentPin}',
+            key: const ValueKey('parent_unlock_demo_hint'),
+            textAlign: TextAlign.center,
+            style: AppTextStyles.cardTitle.copyWith(color: AppColors.purple),
+          ),
+        ],
         const SizedBox(height: AppSpacing.md),
         TextField(
           key: const ValueKey('parent_unlock_pin'),
@@ -117,13 +177,29 @@ class _ParentUnlockSheetState extends State<ParentUnlockSheet> {
           obscureText: true,
           maxLength: 6,
           keyboardType: TextInputType.number,
-          textInputAction: TextInputAction.done,
-          onSubmitted: (_) => _verifyPin(),
-          decoration: const InputDecoration(
-            labelText: 'Родительский PIN',
-            prefixIcon: Icon(Icons.pin_rounded),
+          textInputAction: _needsNewPin
+              ? TextInputAction.next
+              : TextInputAction.done,
+          onSubmitted: (_) => _needsNewPin ? null : _verifyPin(),
+          decoration: InputDecoration(
+            labelText: _needsNewPin ? 'Новый PIN' : 'Родительский PIN',
+            prefixIcon: const Icon(Icons.pin_rounded),
           ),
         ),
+        if (_needsNewPin)
+          TextField(
+            key: const ValueKey('parent_unlock_pin_repeat'),
+            controller: _repeatController,
+            obscureText: true,
+            maxLength: 6,
+            keyboardType: TextInputType.number,
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => _createPin(),
+            decoration: const InputDecoration(
+              labelText: 'Повторите PIN',
+              prefixIcon: Icon(Icons.pin_rounded),
+            ),
+          ),
         if (_error != null) ...[
           Text(
             _error!,
@@ -134,10 +210,16 @@ class _ParentUnlockSheetState extends State<ParentUnlockSheet> {
         ],
         PrimaryGradientButton(
           key: const ValueKey('parent_unlock_continue'),
-          label: 'Войти',
-          onPressed: _busy ? null : _verifyPin,
+          label: _needsNewPin ? 'Сохранить PIN и войти' : 'Войти',
+          onPressed: _busy
+              ? null
+              : _needsNewPin
+              ? _createPin
+              : _verifyPin,
         ),
-        if (_biometricAvailable) ...[
+        if (_needsNewPin || demo)
+          const SizedBox.shrink()
+        else if (_biometricAvailable) ...[
           const SizedBox(height: AppSpacing.xs),
           TextButton.icon(
             key: const ValueKey('parent_unlock_biometric'),

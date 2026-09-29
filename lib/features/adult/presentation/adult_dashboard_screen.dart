@@ -86,8 +86,11 @@ class AdultDashboardScreen extends StatelessWidget {
                 const SizedBox(height: AppSpacing.sm),
                 _ParentRewardCard(state: state),
                 const SizedBox(height: AppSpacing.sm),
-                _ParentAccessCard(state: state),
-                const SizedBox(height: AppSpacing.sm),
+                // The demo PIN must not change the real PIN or biometrics.
+                if (!state.isDemoMode) ...[
+                  _ParentAccessCard(state: state),
+                  const SizedBox(height: AppSpacing.sm),
+                ],
                 _DataActionsCard(state: state),
               ],
             ),

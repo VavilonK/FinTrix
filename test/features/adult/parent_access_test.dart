@@ -164,6 +164,103 @@ void main() {
     expect(find.byType(ParentUnlockSheet), findsOneWidget);
     expect(find.byType(AdultDashboardScreen), findsNothing);
   });
+
+  test('demo PIN opens the parent section only in demo mode', () async {
+    final controller = await _configuredController();
+    expect(
+      await controller.verifyParentPin(AppController.demoParentPin),
+      isFalse,
+    );
+    await controller.enterDemoMode();
+    expect(
+      await controller.verifyParentPin(AppController.demoParentPin),
+      isTrue,
+    );
+    // The real PIN still works in the demo.
+    expect(await controller.verifyParentPin('4826'), isTrue);
+    expect(await controller.verifyParentPin('0000'), isFalse);
+    await controller.exitDemoMode();
+    expect(
+      await controller.verifyParentPin(AppController.demoParentPin),
+      isFalse,
+    );
+  });
+
+  testWidgets('demo unlock shows the PIN and hides PIN settings', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(412, 915));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final controller = await _configuredController();
+    await controller.enterDemoMode();
+
+    await tester.pumpWidget(App(controller: controller));
+    await tester.pumpAndSettle();
+    await _openUnlock(tester);
+    expect(find.text('Демо-режим: PIN 1234'), findsOneWidget);
+
+    await tester.enterText(
+      find.byKey(const ValueKey('parent_unlock_pin')),
+      AppController.demoParentPin,
+    );
+    await tester.tap(find.byKey(const ValueKey('parent_unlock_continue')));
+    await tester.pumpAndSettle();
+    expect(find.byType(AdultDashboardScreen), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.byKey(const ValueKey('adult_exit_demo')),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.byKey(const ValueKey('adult_change_pin')), findsNothing);
+    expect(find.byKey(const ValueKey('adult_biometric_switch')), findsNothing);
+  });
+
+  testWidgets('a missing PIN can be set again instead of locking out', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(412, 915));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final store = MemoryParentCredentialStore();
+    final controller = AppController(
+      parentAccessService: ParentAccessService(
+        store,
+        const UnavailableParentBiometricAuthenticator(),
+      ),
+    );
+    await controller.createParentPin('4826');
+    await controller.completeParentSetup(childName: 'Миша', age: 8);
+    // Android restored the app data, but not the encrypted PIN.
+    await store.clearPin();
+
+    await tester.pumpWidget(App(controller: controller));
+    await tester.pumpAndSettle();
+    await _openUnlock(tester);
+    expect(
+      find.byKey(const ValueKey('parent_unlock_pin_repeat')),
+      findsOneWidget,
+    );
+
+    await tester.enterText(
+      find.byKey(const ValueKey('parent_unlock_pin')),
+      '2468',
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('parent_unlock_pin_repeat')),
+      '2460',
+    );
+    await tester.tap(find.byKey(const ValueKey('parent_unlock_continue')));
+    await tester.pumpAndSettle();
+    expect(find.text('PIN не совпадают. Введите ещё раз.'), findsOneWidget);
+
+    await tester.enterText(
+      find.byKey(const ValueKey('parent_unlock_pin_repeat')),
+      '2468',
+    );
+    await tester.tap(find.byKey(const ValueKey('parent_unlock_continue')));
+    await tester.pumpAndSettle();
+    expect(find.byType(AdultDashboardScreen), findsOneWidget);
+    expect(await controller.verifyParentPin('2468'), isTrue);
+  });
 }
 
 Future<AppController> _configuredController() async {

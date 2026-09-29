@@ -954,11 +954,22 @@ class AppController extends ChangeNotifier {
     _notifyAndPersist();
   }
 
+  /// Fixed PIN of the demo profile, published in README so the jury can
+  /// open the parent section. It works only in demo mode; the real parent
+  /// PIN keeps working there too.
+  static const String demoParentPin = '1234';
+
   Future<bool> createParentPin(String pin) {
     return _parentAccessService.setPin(pin);
   }
 
-  Future<bool> verifyParentPin(String pin) {
+  /// Whether a parent PIN is stored. It can be missing after Android restored
+  /// app data from a backup (the encrypted PIN is not backed up) or for a
+  /// profile made by an older build; the parent then sets a new one.
+  Future<bool> hasParentPin() => _parentAccessService.hasPin();
+
+  Future<bool> verifyParentPin(String pin) async {
+    if (isDemoMode && pin == demoParentPin) return true;
     return _parentAccessService.verifyPin(pin);
   }
 
