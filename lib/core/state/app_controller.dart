@@ -1106,6 +1106,77 @@ class AppController extends ChangeNotifier {
     return true;
   }
 
+  /// Growth points that put Рыжик in the middle of [stage] in the demo.
+  static int demoGrowthPointsFor(PetGrowthStage stage) => switch (stage) {
+    PetGrowthStage.little => 18,
+    PetGrowthStage.growing => PetProgressionConfig.growingThreshold + 10,
+    PetGrowthStage.grown => PetProgressionConfig.grownThreshold + 10,
+  };
+
+  /// Demo only: shows Рыжик at another growth stage right away.
+  bool setDemoGrowthStage(PetGrowthStage stage) {
+    if (!isDemoMode) return false;
+    if (petGrowthStage == stage) return true;
+    petGrowthPoints = demoGrowthPointsFor(stage);
+    _notifyAndPersist();
+    return true;
+  }
+
+  /// Demo only: opens game day [day] from its start. Days after it are
+  /// forgotten, so the scenario (tasks, summary, events) plays again.
+  Future<bool> jumpToDemoDay(int day, {DateTime? now}) async {
+    if (!isDemoMode || day < 1 || day > DemoPeriodDefinitions.count) {
+      return false;
+    }
+    final at = now ?? DateTime.now();
+    _clearMissionRuntime();
+    activeGamePeriod = null;
+    completedGamePeriods.removeWhere(
+      (period) => period.isDemoPeriod && period.sequenceNumber >= day,
+    );
+    demoPeriodIndex = day;
+    pendingEvent = null;
+    deferredEvent = null;
+    eventCheckKey = null;
+    lastEventKey = null;
+    lastEventId = null;
+    missionForToday(now: at);
+    _notifyAndPersist();
+    await flushPersistence();
+    return true;
+  }
+
+  /// Demo only: makes Рыжик hungry (or full again) to check both states.
+  bool setDemoHungry(bool hungry, {DateTime? now}) {
+    if (!isDemoMode) return false;
+    final at = now ?? DateTime.now();
+    petState = petState.copyWith(satiety: hungry ? 20 : 90, lastFedAt: at);
+    _lastHungerCheckAt = at;
+    _notifyAndPersist();
+    return true;
+  }
+
+  /// Demo only: test coins for the shop, savings and events.
+  bool addDemoCoins(int amount, {DateTime? now}) {
+    if (!isDemoMode || amount <= 0) return false;
+    final balanceBefore = balance;
+    balance += amount;
+    _recordFinancialTransaction(
+      type: FinancialTransactionType.earning,
+      source: FinancialTransactionSource.system,
+      title: 'Монеты для проверки',
+      description: 'Демо-режим',
+      amount: amount,
+      balanceBefore: balanceBefore,
+      balanceAfter: balance,
+      savingsBefore: savings,
+      savingsAfter: savings,
+      createdAt: now,
+    );
+    _notifyAndPersist();
+    return true;
+  }
+
   Future<void> resetDemoMode({DateTime? now}) async {
     if (!isDemoMode) return;
     final resetAt = now ?? DateTime.now();

@@ -10,6 +10,7 @@ import '../../../../core/widgets/rounded_surface_card.dart';
 import '../../../adult/presentation/adult_dashboard_screen.dart';
 import '../../../adult/presentation/parent_unlock_sheet.dart';
 import '../../../onboarding/presentation/game_intro_screen.dart';
+import '../../../periods/presentation/demo_control_sheet.dart';
 
 Future<void> showBalanceSummarySheet({
   required BuildContext context,
@@ -200,6 +201,16 @@ Future<void> showSettingsSheet(BuildContext context) {
               ),
             ),
             const SizedBox(height: AppSpacing.xs),
+            _SheetAction(
+              key: const ValueKey('settings_demo_panel'),
+              icon: Icons.tune_rounded,
+              color: AppColors.purple,
+              label: 'Панель демо',
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                showDemoControlSheet(context);
+              },
+            ),
             _SheetAction(
               key: const ValueKey('settings_restart_demo'),
               icon: Icons.restart_alt_rounded,
