@@ -79,7 +79,6 @@ flutter:
     - assets/images/objects/care/
     - assets/images/objects/shop/
     - assets/images/minigames/memory/
-    - assets/icons/navigation/
 
   # Nunito (SIL OFL 1.1, see assets/fonts/nunito/OFL.txt): static instances
   # cut from the Google Fonts variable font.
