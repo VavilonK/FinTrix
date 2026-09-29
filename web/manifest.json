@@ -1,11 +1,11 @@
 {
-    "name": "finance_pet",
-    "short_name": "finance_pet",
+    "name": "Финансовый питомец",
+    "short_name": "Рыжик",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#2780F7",
+    "theme_color": "#2780F7",
+    "description": "Финансовая грамотность для детей вместе с лисёнком Рыжиком",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
