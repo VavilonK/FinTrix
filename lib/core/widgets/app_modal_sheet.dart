@@ -8,11 +8,13 @@ Future<T?> showAppModalSheet<T>({
   required BuildContext context,
   required WidgetBuilder builder,
   bool isDismissible = true,
+  bool enableDrag = true,
 }) {
   return showModalBottomSheet<T>(
     context: context,
     isScrollControlled: true,
     isDismissible: isDismissible,
+    enableDrag: enableDrag,
     backgroundColor: AppColors.transparent,
     builder: (context) => AppModalSheet(child: builder(context)),
   );

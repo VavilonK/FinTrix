@@ -33,6 +33,11 @@ class AppStateSnapshot {
     this.petName = 'Рыжик',
     this.tutorialSeen = false,
     this.ownedRoomItems = const [],
+    this.pendingEvent,
+    this.deferredEvent,
+    this.eventCheckKey,
+    this.lastEventKey,
+    this.lastEventId,
     required this.cachedDailyMission,
     required this.cachedDailyMissionKey,
     required this.activeMission,
@@ -79,6 +84,11 @@ class AppStateSnapshot {
   final String petName;
   final bool tutorialSeen;
   final List<String> ownedRoomItems;
+  final String? pendingEvent;
+  final String? deferredEvent;
+  final String? eventCheckKey;
+  final String? lastEventKey;
+  final String? lastEventId;
   final DailyMission? cachedDailyMission;
   final String? cachedDailyMissionKey;
   final DailyMission? activeMission;
@@ -128,6 +138,11 @@ class AppStateSnapshot {
     'petName': petName,
     'tutorialSeen': tutorialSeen,
     'ownedRoomItems': ownedRoomItems,
+    'pendingEvent': pendingEvent,
+    'deferredEvent': deferredEvent,
+    'eventCheckKey': eventCheckKey,
+    'lastEventKey': lastEventKey,
+    'lastEventId': lastEventId,
     'cachedDailyMission': cachedDailyMission == null
         ? null
         : AppStateSerializers.dailyMissionToJson(cachedDailyMission!),
@@ -219,6 +234,11 @@ class AppStateSnapshot {
       tutorialSeen: json['tutorialSeen'] is bool
           ? json['tutorialSeen'] as bool
           : true,
+      pendingEvent: json['pendingEvent'] as String?,
+      deferredEvent: json['deferredEvent'] as String?,
+      eventCheckKey: json['eventCheckKey'] as String?,
+      lastEventKey: json['lastEventKey'] as String?,
+      lastEventId: json['lastEventId'] as String?,
       ownedRoomItems: json['ownedRoomItems'] is List
           ? [
               for (final id in json['ownedRoomItems'] as List)

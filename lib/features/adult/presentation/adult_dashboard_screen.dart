@@ -524,6 +524,8 @@ class _LearningProgressCard extends StatelessWidget {
       'memory',
       'attention',
       'entertainment',
+      'safety',
+      'unexpected',
     ];
 
     return _AdultCard(
@@ -1169,6 +1171,8 @@ String _taskThemeLabel(String id) => switch (id) {
   'memory' => 'Память',
   'attention' => 'Внимание',
   'entertainment' => 'Развлечения',
+  'safety' => 'Безопасность денег',
+  'unexpected' => 'Непредвиденные расходы',
   _ => id,
 };
 

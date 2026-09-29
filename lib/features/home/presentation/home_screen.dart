@@ -20,6 +20,8 @@ import 'widgets/pet_stage.dart';
 import 'widgets/room_background.dart';
 import 'pet_messages.dart';
 import '../../shop/presentation/shop_sheet.dart';
+import '../../events/domain/game_event.dart';
+import '../../events/presentation/game_event_sheet.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
@@ -47,6 +49,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   /// The pet's reply to the last purchase, shown for a few seconds.
   String? _reaction;
   Timer? _reactionTimer;
+
+  /// A random event is on screen / a check is queued for the next frame.
+  bool _eventSheetOpen = false;
+  bool _eventCheckQueued = false;
 
   /// Measured free space above the pet scene (non-scrolling layout only).
   double _headroom = AppSpacing.sm;
@@ -110,6 +116,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     final appState = AppScope.of(context);
+    if (widget.isActive) _queueEventCheck();
     final pet = appState.petState;
     final hungry = pet.isHungry;
     final foxAsset = PetVisualResolver.assetFor(
@@ -303,6 +310,48 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           content: Text(PetMessages.summaryOf(receipt)),
         ),
       );
+  }
+
+  void _queueEventCheck() {
+    if (_eventCheckQueued || _eventSheetOpen) return;
+    _eventCheckQueued = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _eventCheckQueued = false;
+      _maybeShowEvent();
+    });
+  }
+
+  /// Shows today's random event once Home is on top (never over the intro,
+  /// another screen or a sheet).
+  Future<void> _maybeShowEvent() async {
+    if (!mounted || !widget.isActive || _eventSheetOpen) return;
+    if (!(ModalRoute.of(context)?.isCurrent ?? true)) return;
+    final appState = AppScope.of(context);
+    if (!appState.tutorialSeen) return;
+    final eventId = appState.checkDailyEvent();
+    if (eventId == null) return;
+    _eventSheetOpen = true;
+    _animation?.interrupt();
+    final outcome = await showGameEventSheet(
+      context: context,
+      eventId: eventId,
+      onOpenTasks: widget.onOpenTasks,
+    );
+    _eventSheetOpen = false;
+    if (outcome == null || !mounted) return;
+    final effect = outcome.option.effect;
+    if (effect == GameEventEffect.payFromBalance ||
+        effect == GameEventEffect.payFromSavings) {
+      _animation?.playPet();
+    }
+    _showReaction(switch (effect) {
+      GameEventEffect.loseCoins => 'Больше не попадёмся! Коды — это секрет.',
+      GameEventEffect.rewardCoins ||
+      GameEventEffect.none => 'Мы молодцы — не поддались на обман!',
+      GameEventEffect.payFromBalance ||
+      GameEventEffect.payFromSavings => 'Лапка больше не болит. Спасибо!',
+      GameEventEffect.postpone => 'Лапка ещё болит… Вылечим её завтра?',
+    });
   }
 
   void _showReaction(String text) {

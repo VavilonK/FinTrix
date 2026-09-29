@@ -8,6 +8,10 @@ import '../../features/goals/domain/savings_goal.dart';
 import '../../features/adult/domain/parent_access_service.dart';
 import '../../features/budget/domain/budget_plan.dart';
 import '../../features/budget/domain/budget_usage.dart';
+import '../../features/events/domain/game_event.dart';
+
+import 'dart:math' as math;
+
 import '../../features/finance/data/financial_transaction_repository.dart';
 import '../../features/finance/domain/financial_transaction.dart';
 import '../../features/home/domain/pet_models.dart';
@@ -148,6 +152,17 @@ class AppController extends ChangeNotifier {
 
   /// Room items bought once (ShopItem ids).
   final Set<String> ownedRoomItems = {};
+
+  /// Random game event waiting for the child's choice.
+  GameEventId? pendingEvent;
+
+  /// A postponed event that returns on the next game day.
+  GameEventId? deferredEvent;
+
+  /// Day key of the last check / last event (no events two days running).
+  String? eventCheckKey;
+  String? lastEventKey;
+  GameEventId? lastEventId;
 
   ParentProfile get parentProfile => _parentProfile;
 
@@ -710,6 +725,163 @@ class AppController extends ChangeNotifier {
     if (tutorialSeen) return;
     tutorialSeen = true;
     _notifyAndPersist();
+  }
+
+  String _eventDayKey(DateTime day) => isDemoMode
+      ? 'demo|$demoPeriodIndex'
+      : '${day.year}-${day.month}-${day.day}';
+
+  /// Starts at most one event per game day: fixed days in the demo, a 25%
+  /// chance in normal play (never on a new profile's first day and never two
+  /// days in a row). Returns the event the child should see now.
+  GameEventId? checkDailyEvent({DateTime? now}) {
+    final day = now ?? DateTime.now();
+    final key = _eventDayKey(day);
+    if (eventCheckKey == key) return pendingEvent;
+    eventCheckKey = key;
+    if (pendingEvent == null && deferredEvent != null) {
+      pendingEvent = deferredEvent;
+      deferredEvent = null;
+    }
+    if (pendingEvent == null) {
+      GameEventId? next;
+      if (isDemoMode) {
+        next = GameEvents.demoSchedule[demoPeriodIndex];
+      } else {
+        final playedDays = completedGamePeriods
+            .where((period) => !period.isDemoPeriod)
+            .length;
+        final yesterday = _eventDayKey(day.subtract(const Duration(days: 1)));
+        final roll = math.Random(key.hashCode).nextDouble();
+        if (playedDays > 0 &&
+            lastEventKey != yesterday &&
+            roll < GameEvents.dailyChance) {
+          next = lastEventId == GameEventId.scamCall
+              ? GameEventId.vetVisit
+              : GameEventId.scamCall;
+        }
+      }
+      if (next != null) {
+        pendingEvent = next;
+        lastEventKey = key;
+        lastEventId = next;
+      }
+    }
+    _notifyAndPersist();
+    return pendingEvent;
+  }
+
+  /// Whether [option] of the pending event can be chosen with current coins.
+  bool canChooseEventOption(GameEventOption option) => switch (option.effect) {
+    GameEventEffect.payFromBalance => balance >= option.amount,
+    GameEventEffect.payFromSavings => savings >= option.amount,
+    _ => true,
+  };
+
+  /// Applies the child's choice through the regular economy. Returns null if
+  /// there is no pending event or the choice is not affordable.
+  GameEventOutcome? resolveEvent(String optionId, {DateTime? now}) {
+    final id = pendingEvent;
+    if (id == null) return null;
+    final event = GameEvents.of(id);
+    final option = event.option(optionId);
+    if (!canChooseEventOption(option)) return null;
+    final actionTime = now ?? DateTime.now();
+    _applyHunger(actionTime);
+    final balanceBefore = balance;
+    final savingsBefore = savings;
+    final careBefore = petState.care;
+    switch (option.effect) {
+      case GameEventEffect.loseCoins:
+        final lost = math.min(option.amount, balance);
+        if (lost > 0) {
+          balance -= lost;
+          _recordFinancialTransaction(
+            type: FinancialTransactionType.loss,
+            source: FinancialTransactionSource.event,
+            title: event.transactionTitle,
+            description: 'Коды из СМС нельзя сообщать никому',
+            sourceId: event.id.name,
+            amount: lost,
+            balanceBefore: balanceBefore,
+            balanceAfter: balance,
+            savingsBefore: savings,
+            savingsAfter: savings,
+            createdAt: actionTime,
+          );
+        }
+      case GameEventEffect.rewardCoins:
+        balance += option.amount;
+        _recordPeriodEarning(option.amount);
+        _recordFinancialTransaction(
+          type: FinancialTransactionType.earning,
+          source: FinancialTransactionSource.event,
+          title: 'Награда за осторожность',
+          description: event.title,
+          sourceId: event.id.name,
+          amount: option.amount,
+          balanceBefore: balanceBefore,
+          balanceAfter: balance,
+          savingsBefore: savings,
+          savingsAfter: savings,
+          createdAt: actionTime,
+        );
+      case GameEventEffect.none:
+        break;
+      case GameEventEffect.payFromBalance:
+        _recordExpense(option.amount, ExpenseCategory.essential);
+        _recordFinancialTransaction(
+          type: FinancialTransactionType.essentialExpense,
+          source: FinancialTransactionSource.event,
+          title: event.transactionTitle,
+          description: 'Оплачено из кошелька',
+          sourceId: event.id.name,
+          amount: option.amount,
+          balanceBefore: balanceBefore,
+          balanceAfter: balance,
+          savingsBefore: savings,
+          savingsAfter: savings,
+          createdAt: actionTime,
+        );
+      case GameEventEffect.payFromSavings:
+        savings -= option.amount;
+        _recordFinancialTransaction(
+          type: FinancialTransactionType.essentialExpense,
+          source: FinancialTransactionSource.event,
+          title: event.transactionTitle,
+          description: 'Оплачено из копилки',
+          sourceId: event.id.name,
+          amount: option.amount,
+          balanceBefore: balance,
+          balanceAfter: balance,
+          savingsBefore: savingsBefore,
+          savingsAfter: savings,
+          createdAt: actionTime,
+        );
+      case GameEventEffect.postpone:
+        petState = petState.copyWith(care: petState.care - option.careLoss);
+        deferredEvent = id;
+    }
+    pendingEvent = null;
+    final period = activeGamePeriod;
+    if (period != null &&
+        period.status == GamePeriodStatus.active &&
+        !period.trainedThemeIds.contains(id.themeId)) {
+      activeGamePeriod = period.copyWith(
+        trainedThemeIds: [...period.trainedThemeIds, id.themeId],
+      );
+    }
+    _notifyAndPersist();
+    return GameEventOutcome(
+      event: event,
+      option: option,
+      balanceBefore: balanceBefore,
+      balanceAfter: balance,
+      savingsBefore: savingsBefore,
+      savingsAfter: savings,
+      careBefore: careBefore,
+      careAfter: petState.care,
+    );
   }
 
   void petFox({DateTime? now}) {
@@ -1306,6 +1478,11 @@ class AppController extends ChangeNotifier {
       petName: petName,
       tutorialSeen: tutorialSeen,
       ownedRoomItems: ownedRoomItems.toList(growable: false),
+      pendingEvent: pendingEvent?.name,
+      deferredEvent: deferredEvent?.name,
+      eventCheckKey: eventCheckKey,
+      lastEventKey: lastEventKey,
+      lastEventId: lastEventId?.name,
       cachedDailyMission: _cachedDailyMission,
       cachedDailyMissionKey: _cachedDailyMissionKey,
       activeMission: activeMission,
@@ -1366,6 +1543,13 @@ class AppController extends ChangeNotifier {
           (id) => ShopCatalog.byId(id)?.isPermanent ?? false,
         ),
       );
+    GameEventId? eventNamed(String? name) =>
+        GameEventId.values.where((value) => value.name == name).firstOrNull;
+    pendingEvent = eventNamed(snapshot.pendingEvent);
+    deferredEvent = eventNamed(snapshot.deferredEvent);
+    eventCheckKey = snapshot.eventCheckKey;
+    lastEventKey = snapshot.lastEventKey;
+    lastEventId = eventNamed(snapshot.lastEventId);
     _cachedDailyMission = snapshot.cachedDailyMission;
     _cachedDailyMissionKey = snapshot.cachedDailyMissionKey;
     activeMission = snapshot.activeMission;
@@ -1545,6 +1729,11 @@ class AppController extends ChangeNotifier {
     petAppearance = const PetAppearance();
     petName = defaultPetName;
     ownedRoomItems.clear();
+    pendingEvent = null;
+    deferredEvent = null;
+    eventCheckKey = null;
+    lastEventKey = null;
+    lastEventId = null;
     streak = 4;
     petLevel = 5;
     petXp = 680;

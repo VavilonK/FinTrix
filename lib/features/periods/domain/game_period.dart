@@ -139,6 +139,7 @@ class GamePeriod {
     PetGrowthStage? petStageAtEnd,
     bool? growthEvaluated,
     List<String>? rewardedMiniGameIds,
+    List<String>? trainedThemeIds,
   }) {
     return GamePeriod(
       id: id,
@@ -183,7 +184,7 @@ class GamePeriod {
       petStageAtStart: petStageAtStart,
       petStageAtEnd: petStageAtEnd ?? this.petStageAtEnd,
       growthEvaluated: growthEvaluated ?? this.growthEvaluated,
-      trainedThemeIds: trainedThemeIds,
+      trainedThemeIds: trainedThemeIds ?? this.trainedThemeIds,
       rewardedMiniGameIds: rewardedMiniGameIds ?? this.rewardedMiniGameIds,
     );
   }

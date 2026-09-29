@@ -189,7 +189,8 @@ class FinancialTransactionTile extends StatelessWidget {
       FinancialTransactionType.earning => '+',
       FinancialTransactionType.savingsDeposit => '→ ',
       FinancialTransactionType.savingsWithdrawal => '← ',
-      FinancialTransactionType.goalPurchase => '−',
+      FinancialTransactionType.goalPurchase ||
+      FinancialTransactionType.loss => '−',
       FinancialTransactionType.essentialExpense ||
       FinancialTransactionType.wantExpense => '−',
     };
@@ -435,6 +436,12 @@ _visualFor(FinancialTransactionType type) => switch (type) {
     background: const Color(0xFFEDE5FF),
     semanticLabel: 'накопления использованы на мечту',
   ),
+  FinancialTransactionType.loss => (
+    icon: Icons.warning_amber_rounded,
+    foreground: AppColors.pink,
+    background: const Color(0xFFFFE6EC),
+    semanticLabel: 'потеряно',
+  ),
 };
 
 String _balanceChange(FinancialTransaction transaction) {
@@ -453,12 +460,14 @@ String _categoryLabel(FinancialTransaction transaction) =>
         FinancialTransactionSource.savings => 'Накопления',
         FinancialTransactionSource.system => 'Награда',
         FinancialTransactionSource.parent => 'От родителя',
+        FinancialTransactionSource.event => 'Событие',
       },
       FinancialTransactionType.essentialExpense => 'На важное',
       FinancialTransactionType.wantExpense => 'На приятное',
       FinancialTransactionType.savingsDeposit => 'В копилку',
       FinancialTransactionType.savingsWithdrawal => 'Из копилки',
       FinancialTransactionType.goalPurchase => 'Мечта достигнута',
+      FinancialTransactionType.loss => 'Потеряно',
     };
 
 String _coins(int value) => value.toString().replaceAllMapped(

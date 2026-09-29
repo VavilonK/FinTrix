@@ -5,6 +5,9 @@ enum FinancialTransactionType {
   savingsDeposit,
   savingsWithdrawal,
   goalPurchase,
+
+  /// Coins lost in a game event (e.g. to a fraudster); not a purchase.
+  loss,
 }
 
 enum FinancialTransactionSource {
@@ -14,6 +17,7 @@ enum FinancialTransactionSource {
   savings,
   system,
   parent,
+  event,
 }
 
 class FinancialTransaction {
