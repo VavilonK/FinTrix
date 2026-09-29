@@ -1,17 +1,104 @@
-# finance_pet
+# Финансовый питомец
 
-A new Flutter project.
+Игровое Android-приложение для детей 7–11 лет. Ребёнок заботится о лисёнке Рыжике и учится обращаться с игровыми монетами: планировать бюджет, отличать важные траты от желаний, копить на цель и не попадаться на уловки мошенников. Реальных денег, рекламы и покупок нет, интернет не нужен.
 
-## Getting Started
+| | |
+|---|---|
+| Имя пакета | `ru.financepet.ryzhik` |
+| Версия / номер сборки | **1.0.0 / 1** (`pubspec.yaml`: `version: 1.0.0+1`) |
+| Android | 7.0+ (minSdk 24), целевой SDK 36 |
+| Стек | Flutter 3.47.4, Dart 3.13.3, SQLite |
+| Автотесты | 427, все проходят |
 
-This project is a starting point for a Flutter application.
+Подробная документация: [docs/DOCUMENTATION.md](docs/DOCUMENTATION.md) (и DOCX-версия в `docs/`). Карточка RuStore: [docs/rustore/RUSTORE_CARD.md](docs/rustore/RUSTORE_CARD.md). Что и где сдаётся: [docs/SUBMISSION.md](docs/SUBMISSION.md).
 
-A few resources to get you started if this is your first Flutter project:
+## Что умеет
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+- Знакомство с игрой и три типа решений: потратить на важное, на приятное или отложить.
+- Главный экран с Рыжиком, балансом, копилкой, целью и показателями (настроение, сытость, забота).
+- Ежедневная миссия из 12 заданий на карте Москвы: счёт денег, покупки, бюджет, сбережения, логика.
+- План бюджета по трём направлениям и сравнение «план и факт».
+- Магазин из 8 позиций: еда, уход, игрушки для комнаты; при нехватке монет — объяснение и варианты.
+- Цели накопления (велосипед, самокат, конструктор), копилка, снятие с подтверждением.
+- Рост Рыжика в три стадии по итогам решений за несколько дней, внешний вид (4 худи, очки, бантик).
+- События: звонок мошенника и непредвиденный расход на ветеринара.
+- Раздел для взрослого за PIN или биометрией: прогресс, пройденные темы, начисление монет, удаление данных.
+- Демо-режим на 5 дней с панелью: выбор стадии Рыжика, любого дня, голод, монеты, завершение дня.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Быстрый запуск
+
+**Готовая сборка.** Установить `app-release.apk` на устройство Android 8.0+ (разрешить установку из этого источника) или:
+
+```bash
+adb install app-release.apk
+```
+
+**Из исходников**
+
+```bash
+git clone https://github.com/VavilonK/Hackathon.git
+cd Hackathon
+flutter pub get
+flutter run
+```
+
+## Сборка подписанного релизного APK
+
+1. Создать ключ (один раз, хранить вне репозитория):
+
+   ```bash
+   keytool -genkeypair -v -keystore finance_pet_release.jks -storetype JKS -keyalg RSA -keysize 2048 -validity 10000 -alias finance_pet
+   ```
+
+2. Создать `android/key.properties` (файл в `.gitignore`):
+
+   ```properties
+   storeFile=C:/путь/к/finance_pet_release.jks
+   storePassword=<пароль хранилища>
+   keyAlias=finance_pet
+   keyPassword=<пароль ключа>
+   ```
+
+3. Собрать APK и (по желанию) AAB:
+
+   ```bash
+   flutter build apk --release
+   flutter build appbundle --release
+   ```
+
+   Результат: `build/app/outputs/flutter-apk/app-release.apk` и `build/app/outputs/bundle/release/app-release.aab`.
+
+Без `key.properties` релиз подписывается отладочным ключом (удобно для проверки сборки, но не для сдачи).
+
+## Проверки
+
+```bash
+dart analyze lib test
+flutter test
+```
+
+## Демо-режим и сброс
+
+- **Включить:** шестерёнка на главном экране → «Демо-режим» → «Запустить». Создаётся отдельный тестовый профиль «Миша», обычный профиль не затрагивается.
+- **Сценарий:** 5 игровых дней без ожидания реального времени; день 2 — звонок мошенника, день 4 — ветеринар. После заданий дня — экран итогов и «Следующий день».
+- **Панель демо:** Настройки → «Панель демо» — стадия Рыжика (1–3), переход к любому дню, «Сделать голодным», «+500 монет», «Завершить день и открыть итоги».
+- **Сброс демо:** Настройки → «Начать демо заново». **Выход:** «Выйти из демо-режима».
+- **Удаление обычного профиля:** Настройки → «Для родителей» → PIN → «Удалить профиль и данные».
+
+## Структура репозитория
+
+```
+lib/
+  app/            точка входа и навигация
+  core/           состояние и экономика (AppController), SQLite, тема, общие виджеты
+  features/       модули: onboarding, home, tasks, missions, budget, shop, goals,
+                  finance, periods, pet_progression, events, play, profile, adult
+assets/           иллюстрации, анимации Рыжика, шрифт Nunito, иконка
+test/             автотесты
+tool/             генератор иконки приложения
+docs/             документация, карточка RuStore, презентация, скриншоты
+```
+
+## Лицензии
+
+Используемые библиотеки — BSD/MIT, шрифт Nunito — SIL OFL 1.1. Полный перечень — в разделе 12 документации.

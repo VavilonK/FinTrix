@@ -8,7 +8,7 @@
 PRODUCT_NAME = finance_pet
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.example.financePet
+PRODUCT_BUNDLE_IDENTIFIER = ru.financepet.ryzhik
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2026 com.example. All rights reserved.
+PRODUCT_COPYRIGHT = Copyright © 2026 Finance Pet team. All rights reserved.

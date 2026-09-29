@@ -1,4 +1,4 @@
-package com.example.finance_pet
+package ru.financepet.ryzhik
 
 import io.flutter.embedding.android.FlutterFragmentActivity
 
